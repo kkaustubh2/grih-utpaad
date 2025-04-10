@@ -1,0 +1,275 @@
+/* General Styles */
+body {
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f8f9fa;
+    color: #2c3e50;
+    line-height: 1.6;
+    min-height: 100vh;
+}
+
+.index-page {
+    background-image: url('../images/background.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    min-height: 100vh;
+    position: relative;
+}
+
+.index-page::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.85);
+    z-index: 1;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    position: relative;
+    z-index: 2;
+}
+
+h2 {
+    color: #007B5E;
+    font-size: 1.75rem;
+    margin: 0 0 1.5rem 0;
+    font-weight: 600;
+}
+
+a {
+    color: #007B5E;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+a:hover {
+    color: #005b46;
+    text-decoration: underline;
+}
+
+/* Card and Table Styles */
+.card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.card-header h2 {
+    margin: 0;
+}
+
+.table-responsive {
+    overflow-x: auto;
+    margin: -1px;
+    border-radius: 12px;
+}
+
+table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background-color: white;
+    margin: 0;
+}
+
+th, td {
+    padding: 1rem;
+    border-bottom: 1px solid #e9ecef;
+    text-align: left;
+    vertical-align: middle;
+}
+
+th {
+    background-color: #e9f5f1;
+    font-weight: 600;
+    color: #2c3e50;
+    white-space: nowrap;
+}
+
+tr:last-child td {
+    border-bottom: none;
+}
+
+tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Image Styles */
+img {
+    max-width: 100px;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+    object-fit: cover;
+}
+
+img:hover {
+    transform: scale(1.05);
+}
+
+/* Buttons */
+button, .btn {
+    padding: 0.625rem 1.25rem;
+    background-color: #007B5E;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    white-space: nowrap;
+}
+
+button:hover, .btn:hover {
+    background-color: #005b46;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Form Styles */
+.form-group {
+    margin-bottom: 1.25rem;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.form-control {
+    padding: 0.75rem;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    width: 100%;
+    transition: all 0.3s ease;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+
+.form-control:focus {
+    border-color: #007B5E;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 123, 94, 0.1);
+}
+
+/* Status Badges */
+.badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Alert Messages */
+.alert {
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.alert-success {
+    background: #e6ffe6;
+    color: #28a745;
+}
+
+.alert-error {
+    background: #ffe6e6;
+    color: #dc3545;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 768px) {
+    .container {
+        padding: 1rem;
+    }
+
+    .card {
+        padding: 1rem;
+    }
+
+    table, thead, tbody, th, td, tr {
+        display: block;
+    }
+
+    th {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+
+    td {
+        position: relative;
+        padding-left: 50%;
+        text-align: right;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    td::before {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 45%;
+        white-space: nowrap;
+        font-weight: bold;
+        text-align: left;
+        color: #007B5E;
+    }
+
+    td:nth-of-type(1)::before { content: "Product"; }
+    td:nth-of-type(2)::before { content: "Buyer"; }
+    td:nth-of-type(3)::before { content: "Qty"; }
+    td:nth-of-type(4)::before { content: "Total"; }
+    td:nth-of-type(5)::before { content: "Status"; }
+    td:nth-of-type(6)::before { content: "Ordered On"; }
+    td:nth-of-type(7)::before { content: "Action"; }
+
+    button, .btn {
+        width: 100%;
+        justify-content: center;
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.card {
+    animation: fadeIn 0.5s ease-out;
+} 
