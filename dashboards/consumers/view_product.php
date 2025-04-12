@@ -179,6 +179,49 @@ $result = $conn->query("SELECT p.*, u.name AS seller_name FROM products p JOIN u
                 font-size: 1.4rem;
             }
         }
+        .product-actions .btn:hover {
+            transform: translateY(-2px);
+        }
+        .transparency-box {
+            background: rgba(248, 249, 250, 0.9);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border-left: 4px solid #007B5E;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+        .transparency-box h4 {
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+        .transparency-box p {
+            margin: 8px 0;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .transparency-box i {
+            color: #007B5E;
+            font-size: 1.1rem;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #666;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 8px;
+        }
     </style>
 </head>
 <body class="index-page">
@@ -190,6 +233,33 @@ $result = $conn->query("SELECT p.*, u.name AS seller_name FROM products p JOIN u
         <div class="page-header">
             <h1>Browse Products</h1>
             <p>Discover unique handmade products from talented women entrepreneurs</p>
+        </div>
+
+        <!-- Add transparency info box -->
+        <div class="transparency-box">
+            <h4>Shopping with Grih Utpaad:</h4>
+            <div class="features-grid">
+                <div class="feature-item">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Quality-verified products</span>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-hand-holding-heart"></i>
+                    <span>Support local entrepreneurs</span>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Secure transactions</span>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-star"></i>
+                    <span>Authentic handmade items</span>
+                </div>
+            </div>
+            <p style="margin-top: 15px;">
+                <i class="fas fa-info-circle"></i>
+                All products are made by verified female householders and undergo quality checks
+            </p>
         </div>
 
         <?php if ($result->num_rows > 0): ?>
@@ -226,5 +296,8 @@ $result = $conn->query("SELECT p.*, u.name AS seller_name FROM products p JOIN u
             </div>
         <?php endif; ?>
     </div>
+
+<?php include('../../includes/footer.php'); ?>
+
 </body>
 </html>

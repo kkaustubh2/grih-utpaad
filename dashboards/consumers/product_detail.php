@@ -89,6 +89,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['quantity'])) {
             transform: translateX(-5px);
             text-decoration: none;
         }
+        .transparency-box {
+            background: rgba(248, 249, 250, 0.9);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007B5E;
+        }
+        .transparency-box h4 {
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        .transparency-box p {
+            margin: 5px 0;
+            color: #666;
+        }
+        .transparency-box .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 10px;
+        }
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #666;
+        }
+        .info-item i {
+            color: #007B5E;
+        }
         .product-detail {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -211,12 +242,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['quantity'])) {
         }
     </style>
 </head>
-<body>
+<body class="index-page">
     <div class="container">
+        <a href="view_product.php" class="back-link">
+            <i class="fas fa-arrow-left"></i> Back to Products
+        </a>
+        
         <div class="content-wrapper">
-            <a href="view_product.php" class="back-link">
-                <i class="fas fa-arrow-left"></i> Back to Products
-            </a>
+            <!-- Add transparency info box -->
+            <div class="transparency-box">
+                <h4>Product Information & Ordering:</h4>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Quality-verified product</span>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-truck"></i>
+                        <span>Delivery within 3-5 days</span>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Secure payment</span>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-undo"></i>
+                        <span>7-day return policy</span>
+                    </div>
+                </div>
+                <p style="margin-top: 15px;"><i class="fas fa-info-circle"></i> Your order will directly support women entrepreneurs in your community</p>
+            </div>
 
             <?php if (isset($error_message)): ?>
                 <div class="alert alert-danger">
@@ -259,5 +314,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['quantity'])) {
             </div>
         </div>
     </div>
+
+<?php include('../../includes/footer.php'); ?>
+
 </body>
 </html> 

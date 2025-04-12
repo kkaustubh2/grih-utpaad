@@ -25,7 +25,14 @@ if ($result->num_rows === 0) {
 if (isset($_POST['order_id']) && isset($_POST['new_status'])) {
     $order_id = (int)$_POST['order_id'];
     $new_status = $_POST['new_status'];
+    $reason = isset($_POST['reason']) ? trim($_POST['reason']) : '';
     $allowed_statuses = ['fulfilled', 'cancelled'];
+
+    if (empty($reason)) {
+        $_SESSION['error'] = "A reason is required for status change.";
+        header('Location: manage_orders.php');
+        exit();
+    }
 
     if (in_array($new_status, $allowed_statuses)) {
         $update_stmt = $conn->prepare("
@@ -44,12 +51,25 @@ if (isset($_POST['order_id']) && isset($_POST['new_status'])) {
         
         if ($update_stmt->execute()) {
             $_SESSION['success'] = "Order status updated successfully!";
+            
+            // Log the action in existing admin_logs table
+            $log_stmt = $conn->prepare("
+                INSERT INTO admin_logs (admin_id, action, table_affected, record_id, new_values) 
+                VALUES (?, ?, 'orders', ?, ?)
+            ");
+            $action_type = 'UPDATE_ORDER_STATUS';
+            $log_data = json_encode([
+                'new_status' => $new_status,
+                'reason' => $reason,
+                'timestamp' => date('Y-m-d H:i:s')
+            ]);
+            $log_stmt->bind_param("isis", $admin_id, $action_type, $order_id, $log_data);
+            $log_stmt->execute();
         } else {
             $_SESSION['error'] = "Failed to update order status.";
         }
     }
     
-    // Redirect to prevent form resubmission
     header('Location: manage_orders.php');
     exit();
 }
@@ -270,16 +290,118 @@ $stats = $conn->query($stats_query)->fetch_assoc();
             background-color: #dc3545;
             color: white;
         }
+        .confirmation-dialog {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            width: 400px;
+        }
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+        .action-reason {
+            margin: 15px 0;
+        }
+        .action-reason textarea {
+            width: 100%;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ced4da;
+            resize: vertical;
+        }
+        .status-history {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 15px;
+        }
+        .transparency-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007B5E;
+        }
+        .transparency-box h4 {
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        .transparency-box p {
+            margin: 5px 0;
+            color: #666;
+        }
+        .status-guide {
+            display: flex;
+            gap: 20px;
+            margin-top: 10px;
+        }
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .card {
+            background-color: rgba(255, 255, 255, 0.9);
+            border: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <a href="dashboard.php" class="back-link">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+
         <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div class="header">
                 <h2><i class="fas fa-shopping-cart"></i> Manage Orders</h2>
-                <a href="dashboard.php" class="btn" style="background-color: #6c757d;">
-                    <i class="fas fa-arrow-left"></i> Back to Dashboard
-                </a>
+            </div>
+
+            <!-- Add transparency info box -->
+            <div class="transparency-box">
+                <h4>Order Status Management:</h4>
+                <div class="status-guide">
+                    <div class="status-item">
+                        <i class="fas fa-clock" style="color: #ffc107;"></i>
+                        <span>Pending: Awaiting processing</span>
+                    </div>
+                    <div class="status-item">
+                        <i class="fas fa-check" style="color: #28a745;"></i>
+                        <span>Fulfilled: Order completed</span>
+                    </div>
+                    <div class="status-item">
+                        <i class="fas fa-times" style="color: #dc3545;"></i>
+                        <span>Cancelled: Order cancelled</span>
+                    </div>
+                </div>
+                <p style="margin-top: 10px;"><i class="fas fa-exclamation-circle"></i> All status changes require a reason and will notify both buyer and seller</p>
             </div>
 
             <div class="stats-grid">
@@ -387,7 +509,11 @@ $stats = $conn->query($stats_query)->fetch_assoc();
                             <?php if ($order['status'] === 'pending'): ?>
                                 <div style="text-align: right;">
                                     <div class="order-actions">
-                                        <form method="POST" style="display: inline;">
+                                        <form method="POST" onsubmit="return confirmStatusChange(this, '<?php echo $order['id']; ?>', 'fulfilled', {
+                                            product: '<?php echo htmlspecialchars($order['product_title']); ?>',
+                                            buyer: '<?php echo htmlspecialchars($order['buyer_name']); ?>',
+                                            currentStatus: '<?php echo htmlspecialchars($order['status']); ?>'
+                                        });" style="display: inline;">
                                             <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
                                             <input type="hidden" name="new_status" value="fulfilled">
                                             <button type="submit" class="action-btn fulfill-btn" 
@@ -396,7 +522,11 @@ $stats = $conn->query($stats_query)->fetch_assoc();
                                             </button>
                                         </form>
                                         
-                                        <form method="POST" style="display: inline;">
+                                        <form method="POST" onsubmit="return confirmStatusChange(this, '<?php echo $order['id']; ?>', 'cancelled', {
+                                            product: '<?php echo htmlspecialchars($order['product_title']); ?>',
+                                            buyer: '<?php echo htmlspecialchars($order['buyer_name']); ?>',
+                                            currentStatus: '<?php echo htmlspecialchars($order['status']); ?>'
+                                        });" style="display: inline;">
                                             <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
                                             <input type="hidden" name="new_status" value="cancelled">
                                             <button type="submit" class="action-btn cancel-btn"
@@ -436,5 +566,83 @@ $stats = $conn->query($stats_query)->fetch_assoc();
             <?php endif; ?>
         </div>
     </div>
+    <?php include('../../includes/footer.php'); ?>
+    <div class="overlay" id="overlay"></div>
+    <div class="confirmation-dialog" id="confirmationDialog">
+        <h3>Update Order Status</h3>
+        <p id="confirmationMessage"></p>
+        <div class="action-reason">
+            <label for="actionReason">Reason for Status Change (required):</label>
+            <textarea id="actionReason" rows="3" placeholder="Please provide a detailed reason for this status change"></textarea>
+        </div>
+        <div class="action-buttons">
+            <button onclick="cancelAction()" class="btn" style="background: #6c757d;">Cancel</button>
+            <button onclick="proceedAction()" class="btn" style="background: #28a745;">Update Status</button>
+        </div>
+    </div>
+    <script>
+    let currentForm = null;
+
+    function confirmStatusChange(form, orderId, newStatus, orderDetails) {
+        currentForm = form;
+        const dialog = document.getElementById('confirmationDialog');
+        const overlay = document.getElementById('overlay');
+        const message = document.getElementById('confirmationMessage');
+        
+        message.innerHTML = `
+            <strong>Order #${orderId}</strong><br>
+            Change status to: <strong>${newStatus}</strong><br>
+            <small>
+                Product: ${orderDetails.product}<br>
+                Buyer: ${orderDetails.buyer}<br>
+                Current Status: ${orderDetails.currentStatus}
+            </small>
+        `;
+        
+        dialog.style.display = 'block';
+        overlay.style.display = 'block';
+        
+        return false;
+    }
+
+    function cancelAction() {
+        const dialog = document.getElementById('confirmationDialog');
+        const overlay = document.getElementById('overlay');
+        const reason = document.getElementById('actionReason');
+        
+        dialog.style.display = 'none';
+        overlay.style.display = 'none';
+        reason.value = '';
+        currentForm = null;
+    }
+
+    function proceedAction() {
+        const reason = document.getElementById('actionReason');
+        if (!reason.value.trim()) {
+            alert('Please provide a reason for this status change.');
+            return;
+        }
+        
+        // Add reason to form
+        const reasonInput = document.createElement('input');
+        reasonInput.type = 'hidden';
+        reasonInput.name = 'reason';
+        reasonInput.value = reason.value;
+        currentForm.appendChild(reasonInput);
+        
+        // Submit the form
+        currentForm.submit();
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const dialog = document.getElementById('confirmationDialog');
+        const overlay = document.getElementById('overlay');
+        if (event.target === overlay) {
+            dialog.style.display = 'none';
+            overlay.style.display = 'none';
+        }
+    }
+    </script>
 </body>
 </html> 

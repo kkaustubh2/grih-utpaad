@@ -159,17 +159,53 @@ $categories = $conn->query("
             font-size: 0.85rem;
             margin-left: 10px;
         }
+        .transparency-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007B5E;
+        }
+        .transparency-box h4 {
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        .transparency-box p {
+            margin: 5px 0;
+            color: #666;
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .card {
+            background-color: rgba(255, 255, 255, 0.9);
+            border: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <a href="index.php" class="back-link">
+        <a href="dashboard.php" class="back-link">
             <i class="fas fa-arrow-left"></i> Back to Dashboard
         </a>
 
         <div class="card">
             <div class="header">
                 <h2><i class="fas fa-tags"></i> Manage Categories</h2>
+            </div>
+
+            <!-- Add transparency info box -->
+            <div class="transparency-box">
+                <h4>Category Management Guidelines:</h4>
+                <p><i class="fas fa-info-circle"></i> Categories help organize products for easier browsing</p>
+                <p><i class="fas fa-exclamation-triangle"></i> Deleting a category will not delete its products</p>
+                <p><i class="fas fa-sync"></i> Products in deleted categories will need to be reassigned</p>
+                <p><i class="fas fa-bell"></i> Sellers will be notified of any changes affecting their products</p>
             </div>
 
             <button class="btn btn-add-category" onclick="showModal('add')">
@@ -283,5 +319,6 @@ $categories = $conn->query("
             }
         }
     </script>
+    <?php include('../../includes/footer.php'); ?>
 </body>
 </html> 

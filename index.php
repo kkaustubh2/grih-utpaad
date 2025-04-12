@@ -23,7 +23,7 @@ session_start();
             <?php if ($_SESSION['user']['role'] === 'householder'): ?>
                 <a href="dashboards/householder/dashboard.php" class="btn">🏠 Householder Dashboard</a>
             <?php elseif ($_SESSION['user']['role'] === 'consumer'): ?>
-                <a href="dashboards/consumer/dashboard.php" class="btn">🛒 Consumer Dashboard</a>
+                <a href="dashboards/consumers/index.php" class="btn">🛒 Consumer Dashboard</a>
             <?php elseif ($_SESSION['user']['role'] === 'admin'): ?>
                 <a href="dashboards/admin/dashboard.php" class="btn">👩‍💼 Admin Dashboard</a>
             <?php endif; ?>
@@ -57,6 +57,8 @@ session_start();
         </div>
     </div>
 </div>
+
+<?php include('includes/footer.php'); ?>
 
 </body>
 </html>

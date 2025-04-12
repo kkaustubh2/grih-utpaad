@@ -13,5 +13,10 @@ $order_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
     <h2>🎉 Order Placed Successfully!</h2>
     <p>Your order (ID: #<?php echo $order_id; ?>) has been placed and is currently pending confirmation.</p>
     <p><a href="index.php">← Back to Products</a> | <a href="my_orders.php">📦 View My Orders</a></p>
+
+    </div>
+
+<?php include('../../includes/footer.php'); ?>
+
 </body>
 </html>

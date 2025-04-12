@@ -55,4 +55,5 @@ if (!empty($reviews)) {
                     <?php endforeach; ?>
                 <?php endif; ?>
             </div>
+
 <?php 
