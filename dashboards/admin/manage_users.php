@@ -1,9 +1,9 @@
 <?php
-session_start();
+require_once('../../includes/auth.php');
 
-// Check if user is logged in and is an admin
-if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'admin') {
-    header('Location: login.php');
+// Additional role check for admin
+if ($_SESSION['user']['role'] !== 'admin') {
+    header('Location: ../../login.php');
     exit();
 }
 
@@ -38,8 +38,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_id']) && isset($
     if ($action === 'block' || $action === 'unblock') {
         $is_blocked = ($action === 'block') ? 1 : 0;
         
-        // Prepare the user update statement
-        $stmt = $conn->prepare("UPDATE users SET is_blocked = ?, last_modified = NOW() WHERE id = ? AND role != 'admin'");
+        // Use the existing is_blocked column
+        $stmt = $conn->prepare("UPDATE users SET is_blocked = ? WHERE id = ? AND role != 'admin'");
         $stmt->bind_param("ii", $is_blocked, $user_id);
         
         if ($stmt->execute()) {
@@ -68,9 +68,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_id']) && isset($
 }
 
 // First, let's add the is_blocked column if it doesn't exist
-$check_column = $conn->query("SHOW COLUMNS FROM users LIKE 'is_blocked'");
-if ($check_column->num_rows === 0) {
+$check_blocked_column = $conn->query("SHOW COLUMNS FROM users LIKE 'is_blocked'");
+if ($check_blocked_column->num_rows === 0) {
     $conn->query("ALTER TABLE users ADD COLUMN is_blocked TINYINT(1) NOT NULL DEFAULT 0");
+}
+
+// Check if notifications table exists and create if it doesn't
+$check_notifications_table = $conn->query("SHOW TABLES LIKE 'notifications'");
+if ($check_notifications_table->num_rows === 0) {
+    $create_notifications_table = "CREATE TABLE notifications (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        type VARCHAR(50) NOT NULL,
+        message TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        is_read TINYINT(1) DEFAULT 0,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+    )";
+    $conn->query($create_notifications_table);
+}
+
+// Add last_modified column if it doesn't exist
+$check_modified_column = $conn->query("SHOW COLUMNS FROM users LIKE 'last_modified'");
+if ($check_modified_column->num_rows === 0) {
+    $conn->query("ALTER TABLE users ADD COLUMN last_modified TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
 }
 
 // Fetch users with additional information
@@ -244,6 +265,61 @@ $users = $conn->query("
         tbody tr:hover {
             background: rgba(255, 255, 255, 0.5);
         }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .action-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        .action-reason {
+            margin-bottom: 10px;
+        }
+        .action-reason textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+            min-height: 60px;
+        }
+        .btn-block, .btn-unblock {
+            width: 100%;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+        .btn-block {
+            background-color: #dc3545;
+            color: white;
+        }
+        .btn-block:hover {
+            background-color: #c82333;
+        }
+        .btn-unblock {
+            background-color: #28a745;
+            color: white;
+        }
+        .btn-unblock:hover {
+            background-color: #218838;
+        }
+        .status-blocked {
+            color: #dc3545;
+            font-weight: 500;
+        }
+        .status-active {
+            color: #28a745;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -338,23 +414,29 @@ $users = $conn->query("
                                 <form method="POST" onsubmit="return validateAction(this);">
                                     <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                                     <input type="hidden" name="user_id" value="<?php echo $user['id']; ?>">
-                                    <?php if ($user['is_blocked']): ?>
-                                        <input type="hidden" name="action" value="unblock">
-                                        <div class="action-reason">
-                                            <textarea name="reason" placeholder="Reason for unblocking (required)" required></textarea>
-                                        </div>
-                                        <button type="submit" class="btn action-btn btn-unblock">
-                                            <i class="fas fa-unlock"></i> Unblock
-                                        </button>
-                                    <?php else: ?>
-                                        <input type="hidden" name="action" value="block">
-                                        <div class="action-reason">
-                                            <textarea name="reason" placeholder="Reason for blocking (required)" required></textarea>
-                                        </div>
-                                        <button type="submit" class="btn action-btn btn-block">
-                                            <i class="fas fa-ban"></i> Block
-                                        </button>
-                                    <?php endif; ?>
+                                    <div class="action-buttons" style="display: flex; gap: 10px;">
+                                        <?php if ($user['is_blocked']): ?>
+                                            <div class="action-group">
+                                                <input type="hidden" name="action" value="unblock">
+                                                <div class="action-reason">
+                                                    <textarea name="reason" placeholder="Reason for unblocking (required)" required></textarea>
+                                                </div>
+                                                <button type="submit" class="btn action-btn btn-unblock">
+                                                    <i class="fas fa-unlock"></i> Unblock
+                                                </button>
+                                            </div>
+                                        <?php else: ?>
+                                            <div class="action-group">
+                                                <input type="hidden" name="action" value="block">
+                                                <div class="action-reason">
+                                                    <textarea name="reason" placeholder="Reason for blocking (required)" required></textarea>
+                                                </div>
+                                                <button type="submit" class="btn action-btn btn-block">
+                                                    <i class="fas fa-ban"></i> Block
+                                                </button>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
                                 </form>
                             </td>
                         </tr>

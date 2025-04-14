@@ -36,10 +36,12 @@ if (isset($_POST['order_id']) && isset($_POST['new_status'])) {
                     fulfilled_at = CASE 
                         WHEN ? = 'fulfilled' THEN CURRENT_TIMESTAMP 
                         ELSE NULL 
-                    END 
+                    END,
+                    updated_at = CURRENT_TIMESTAMP,
+                    updated_by = ?
                 WHERE id = ?
             ");
-            $update_stmt->bind_param("ssi", $new_status, $new_status, $order_id);
+            $update_stmt->bind_param("ssii", $new_status, $new_status, $user_id, $order_id);
             
             if ($update_stmt->execute()) {
                 $_SESSION['success'] = "Order status updated successfully!";
@@ -184,14 +186,21 @@ $orders = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
             display: inline-flex;
             align-items: center;
             gap: 5px;
+            transition: all 0.2s ease;
         }
         .fulfill-btn {
             background-color: #28a745;
             color: white;
         }
+        .fulfill-btn:hover {
+            background-color: #218838;
+        }
         .cancel-btn {
             background-color: #dc3545;
             color: white;
+        }
+        .cancel-btn:hover {
+            background-color: #c82333;
         }
         .pagination {
             display: flex;
@@ -291,7 +300,7 @@ $orders = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
                             
                             <div style="text-align: right;">
                                 <div style="margin-bottom: 10px;">
-                                    <span class="order-status status-<?php echo strtolower($order['status']); ?>">
+                                    <span class="order-status status-<?php echo $order['status']; ?>">
                                         <i class="fas fa-<?php echo $order['status'] === 'fulfilled' ? 'check-circle' : ($order['status'] === 'cancelled' ? 'times-circle' : 'clock'); ?>"></i>
                                         <?php echo ucfirst($order['status']); ?>
                                     </span>
@@ -348,5 +357,7 @@ $orders = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
             <?php endif; ?>
         </div>
     </div>
+
+    <?php include('../../includes/footer.php'); ?>
 </body>
 </html> 

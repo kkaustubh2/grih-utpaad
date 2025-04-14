@@ -27,6 +27,58 @@ $result = $stmt->get_result();
     <title>Received Orders - Grih Utpaad</title>
     <link rel="stylesheet" href="../../assets/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .status-pending {
+            background-color: #ffc107;
+            color: #000;
+        }
+        .status-fulfilled {
+            background-color: #28a745;
+            color: white;
+        }
+        .status-cancelled {
+            background-color: #dc3545;
+            color: white;
+        }
+        .action-btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+        .action-btn:hover {
+            transform: translateY(-1px);
+        }
+        .btn-fulfill {
+            background-color: #28a745;
+            color: white;
+        }
+        .btn-fulfill:hover {
+            background-color: #218838;
+        }
+        .btn-cancel {
+            background-color: #dc3545;
+            color: white;
+        }
+        .btn-cancel:hover {
+            background-color: #c82333;
+        }
+    </style>
 </head>
 <body class="index-page">
 
@@ -37,7 +89,7 @@ $result = $stmt->get_result();
                 <i class="fas fa-shopping-bag" style="color: #007B5E;"></i>
                 Received Orders
             </h2>
-            <a href="index.php" class="btn" style="background-color: #6c757d;">
+            <a href="dashboard.php" class="btn" style="background-color: #6c757d;">
                 <i class="fas fa-arrow-left"></i> Back to Dashboard
             </a>
         </div>
@@ -53,7 +105,7 @@ $result = $stmt->get_result();
                             <th>Total (₹)</th>
                             <th>Status</th>
                             <th>Ordered On</th>
-                            <th>Action</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -63,7 +115,7 @@ $result = $stmt->get_result();
                                     <div style="display: flex; align-items: center; gap: 10px;">
                                         <img src="../../assets/uploads/<?php echo $row['product_image']; ?>" 
                                              alt="<?php echo htmlspecialchars($row['product_title']); ?>"
-                                             style="width: 60px; height: 60px; object-fit: cover;">
+                                             style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;">
                                         <span style="font-weight: 500;"><?php echo htmlspecialchars($row['product_title']); ?></span>
                                     </div>
                                 </td>
@@ -74,33 +126,11 @@ $result = $stmt->get_result();
                                     </div>
                                 </td>
                                 <td><?php echo $row['quantity']; ?></td>
+                                <td>₹<?php echo number_format($row['total_price'], 2); ?></td>
                                 <td>
-                                    <span style="font-weight: 500; color: #007B5E;">
-                                        ₹<?php echo number_format($row['total_price'], 2); ?>
-                                    </span>
-                                </td>
-                                <td>
-                                    <?php
-                                    $statusColor = '';
-                                    $statusIcon = '';
-                                    switch($row['status']) {
-                                        case 'Pending':
-                                            $statusColor = '#ffc107';
-                                            $statusIcon = 'clock';
-                                            break;
-                                        case 'Shipped':
-                                            $statusColor = '#17a2b8';
-                                            $statusIcon = 'truck';
-                                            break;
-                                        case 'Delivered':
-                                            $statusColor = '#28a745';
-                                            $statusIcon = 'check-circle';
-                                            break;
-                                    }
-                                    ?>
-                                    <span class="badge" style="background: <?php echo $statusColor; ?>20; color: <?php echo $statusColor; ?>; padding: 5px 10px; border-radius: 15px;">
-                                        <i class="fas fa-<?php echo $statusIcon; ?>"></i> 
-                                        <?php echo $row['status']; ?>
+                                    <span class="status-badge status-<?php echo $row['status']; ?>">
+                                        <i class="fas fa-<?php echo $row['status'] === 'fulfilled' ? 'check-circle' : ($row['status'] === 'cancelled' ? 'times-circle' : 'clock'); ?>"></i>
+                                        <?php echo ucfirst($row['status']); ?>
                                     </span>
                                 </td>
                                 <td>
@@ -110,20 +140,19 @@ $result = $stmt->get_result();
                                     </div>
                                 </td>
                                 <td>
-                                    <?php if ($row['status'] == 'Pending'): ?>
-                                        <a href="update_order_status.php?id=<?php echo $row['id']; ?>&status=Shipped" 
-                                           class="btn" style="background: #17a2b8; font-size: 0.9rem;">
-                                            <i class="fas fa-truck"></i> Mark as Shipped
-                                        </a>
-                                    <?php elseif ($row['status'] == 'Shipped'): ?>
-                                        <a href="update_order_status.php?id=<?php echo $row['id']; ?>&status=Delivered" 
-                                           class="btn" style="background: #28a745; font-size: 0.9rem;">
-                                            <i class="fas fa-check-circle"></i> Mark as Delivered
-                                        </a>
-                                    <?php else: ?>
-                                        <span class="badge" style="background: #e9f5f1; color: #007B5E; padding: 5px 10px; border-radius: 15px;">
-                                            <i class="fas fa-check-double"></i> Completed
-                                        </span>
+                                    <?php if ($row['status'] === 'pending'): ?>
+                                        <div style="display: flex; gap: 8px;">
+                                            <a href="update_order_status.php?id=<?php echo $row['id']; ?>&status=fulfilled" 
+                                               class="action-btn btn-fulfill"
+                                               onclick="return confirm('Are you sure you want to mark this order as fulfilled?');">
+                                                <i class="fas fa-check"></i> Fulfill
+                                            </a>
+                                            <a href="update_order_status.php?id=<?php echo $row['id']; ?>&status=cancelled" 
+                                               class="action-btn btn-cancel"
+                                               onclick="return confirm('Are you sure you want to cancel this order?');">
+                                                <i class="fas fa-times"></i> Cancel
+                                            </a>
+                                        </div>
                                     <?php endif; ?>
                                 </td>
                             </tr>
@@ -132,14 +161,14 @@ $result = $stmt->get_result();
                 </table>
             </div>
         <?php else: ?>
-            <div class="card" style="text-align: center; padding: 40px;">
-                <i class="fas fa-inbox" style="font-size: 3rem; color: #6c757d; margin-bottom: 20px;"></i>
-                <p style="font-size: 1.2rem; color: #6c757d;">No orders received yet.</p>
-                <p style="color: #6c757d;">Orders will appear here once customers make purchases.</p>
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> No orders found.
             </div>
         <?php endif; ?>
     </div>
 </div>
+
+<?php include('../../includes/footer.php'); ?>
 
 </body>
 </html>

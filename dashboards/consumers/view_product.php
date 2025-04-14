@@ -1,14 +1,21 @@
 <?php
-session_start();
-if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'consumer') {
+require_once('../../includes/auth.php');
+
+// Additional role check for consumer
+if ($_SESSION['user']['role'] !== 'consumer') {
     header('Location: ../../index.php');
     exit();
 }
 
 require_once('../../config/db.php');
 
-// Fetch all products
-$result = $conn->query("SELECT p.*, u.name AS seller_name FROM products p JOIN users u ON p.user_id = u.id");
+// Fetch all products with their categories
+$query = "SELECT p.*, u.name AS seller_name, pc.name AS category_name 
+          FROM products p 
+          JOIN users u ON p.user_id = u.id 
+          LEFT JOIN product_categories pc ON p.category_id = pc.id 
+          WHERE p.is_approved = 1";
+$result = $conn->query($query);
 ?>
 
 <!DOCTYPE html>
@@ -18,6 +25,52 @@ $result = $conn->query("SELECT p.*, u.name AS seller_name FROM products p JOIN u
     <link rel="stylesheet" href="../../assets/uploads/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9f5f1 100%);
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .user-name {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+        .logout-btn:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
         .product-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -25,15 +78,15 @@ $result = $conn->query("SELECT p.*, u.name AS seller_name FROM products p JOIN u
             padding: 30px 0;
         }
         .product-card {
-            background: white;
+            background: rgba(255, 255, 255, 0.9);
             border-radius: 15px;
             overflow: hidden;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
-            border: 1px solid #e9ecef;
-            height: 500px; /* Fixed height for consistency */
+            height: 500px;
             display: flex;
             flex-direction: column;
+            backdrop-filter: blur(10px);
         }
         .product-card:hover {
             transform: translateY(-10px);
@@ -41,7 +94,7 @@ $result = $conn->query("SELECT p.*, u.name AS seller_name FROM products p JOIN u
         }
         .product-image {
             width: 100%;
-            height: 300px; /* Fixed height for the image */
+            height: 300px;
             object-fit: cover;
             transition: transform 0.5s ease;
         }
@@ -65,6 +118,15 @@ $result = $conn->query("SELECT p.*, u.name AS seller_name FROM products p JOIN u
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
+        }
+        .product-category {
+            color: #007B5E;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            display: inline-block;
+            padding: 4px 12px;
+            background: rgba(0, 123, 94, 0.1);
+            border-radius: 15px;
         }
         .product-price {
             font-size: 1.6rem;
@@ -94,26 +156,49 @@ $result = $conn->query("SELECT p.*, u.name AS seller_name FROM products p JOIN u
             font-size: 1.1rem;
             font-weight: 600;
             border-radius: 10px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
         .btn-primary {
             background: #007B5E;
             color: white;
-            border: none;
         }
         .btn-primary:hover {
             background: #005b46;
             transform: translateY(-2px);
         }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            color: #007B5E;
+            text-decoration: none;
+            font-size: 1.1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+        .back-link:hover {
+            color: #005b46;
+            transform: translateX(-5px);
+        }
         .page-header {
-            margin: 40px 0;
             text-align: center;
-            animation: fadeIn 0.8s ease-out;
+            margin-bottom: 40px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
         }
         .page-header h1 {
             color: #007B5E;
             font-size: 2.5rem;
             margin-bottom: 15px;
-            font-weight: 700;
         }
         .page-header p {
             color: #6c757d;
@@ -121,56 +206,15 @@ $result = $conn->query("SELECT p.*, u.name AS seller_name FROM products p JOIN u
             max-width: 600px;
             margin: 0 auto;
         }
-        .back-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            margin: 20px 0;
-            color: #007B5E;
-            text-decoration: none;
-            font-size: 1.1rem;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-        .back-link:hover {
-            color: #005b46;
-            transform: translateX(-5px);
-        }
-        .back-link i {
-            font-size: 1.2rem;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .product-card {
-            animation: fadeIn 0.5s ease-out;
-            animation-fill-mode: both;
-        }
-        .product-grid > * {
-            animation-delay: calc(var(--animation-order) * 0.1s);
-        }
-        .no-products {
-            text-align: center;
-            padding: 40px;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            margin: 30px 0;
-            color: #6c757d;
-            font-size: 1.2rem;
-        }
         @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
             .product-grid {
                 grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
                 gap: 20px;
-                padding: 20px 0;
-            }
-            .page-header h1 {
-                font-size: 2rem;
-            }
-            .page-header p {
-                font-size: 1.1rem;
             }
             .product-title {
                 font-size: 1.2rem;
@@ -179,125 +223,67 @@ $result = $conn->query("SELECT p.*, u.name AS seller_name FROM products p JOIN u
                 font-size: 1.4rem;
             }
         }
-        .product-actions .btn:hover {
-            transform: translateY(-2px);
-        }
-        .transparency-box {
-            background: rgba(248, 249, 250, 0.9);
-            padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-            border-left: 4px solid #007B5E;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        }
-        .transparency-box h4 {
-            color: #2c3e50;
-            margin-top: 0;
-            margin-bottom: 15px;
-            font-size: 1.2rem;
-        }
-        .transparency-box p {
-            margin: 8px 0;
-            color: #666;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .transparency-box i {
-            color: #007B5E;
-            font-size: 1.1rem;
-        }
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
-        }
-        .feature-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: #666;
-            padding: 10px;
-            background: rgba(255, 255, 255, 0.5);
-            border-radius: 8px;
-        }
     </style>
 </head>
-<body class="index-page">
+<body>
     <div class="container">
+        <div class="header">
+            <div class="user-info">
+                <i class="fas fa-user-circle fa-2x" style="color: #007B5E;"></i>
+                <span class="user-name">Welcome, <?php echo htmlspecialchars($_SESSION['user']['name']); ?></span>
+            </div>
+            <a href="../../logout.php" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                Logout
+            </a>
+        </div>
+
         <a href="index.php" class="back-link">
             <i class="fas fa-arrow-left"></i> Back to Dashboard
         </a>
-        
+
         <div class="page-header">
             <h1>Browse Products</h1>
             <p>Discover unique handmade products from talented women entrepreneurs</p>
         </div>
 
-        <!-- Add transparency info box -->
-        <div class="transparency-box">
-            <h4>Shopping with Grih Utpaad:</h4>
-            <div class="features-grid">
-                <div class="feature-item">
-                    <i class="fas fa-check-circle"></i>
-                    <span>Quality-verified products</span>
-                </div>
-                <div class="feature-item">
-                    <i class="fas fa-hand-holding-heart"></i>
-                    <span>Support local entrepreneurs</span>
-                </div>
-                <div class="feature-item">
-                    <i class="fas fa-shield-alt"></i>
-                    <span>Secure transactions</span>
-                </div>
-                <div class="feature-item">
-                    <i class="fas fa-star"></i>
-                    <span>Authentic handmade items</span>
-                </div>
-            </div>
-            <p style="margin-top: 15px;">
-                <i class="fas fa-info-circle"></i>
-                All products are made by verified female householders and undergo quality checks
-            </p>
-        </div>
-
-        <?php if ($result->num_rows > 0): ?>
-            <div class="product-grid">
-                <?php 
-                $i = 0;
-                while ($row = $result->fetch_assoc()): 
-                    $i++;
-                ?>
-                    <div class="product-card" style="--animation-order: <?php echo $i; ?>">
-                        <img src="../../assets/uploads/<?php echo $row['image']; ?>" 
-                             alt="<?php echo htmlspecialchars($row['title']); ?>" 
+        <div class="product-grid">
+            <?php if ($result->num_rows > 0): ?>
+                <?php while ($product = $result->fetch_assoc()): ?>
+                    <div class="product-card">
+                        <img src="../../assets/uploads/<?php echo htmlspecialchars($product['image']); ?>" 
+                             alt="<?php echo htmlspecialchars($product['title']); ?>" 
                              class="product-image">
                         <div class="product-info">
-                            <h3 class="product-title"><?php echo htmlspecialchars($row['title']); ?></h3>
-                            <div class="product-price">₹<?php echo number_format($row['price'], 2); ?></div>
+                            <?php if ($product['category_name']): ?>
+                                <span class="product-category">
+                                    <i class="fas fa-tag"></i> <?php echo htmlspecialchars($product['category_name']); ?>
+                                </span>
+                            <?php endif; ?>
+                            <h2 class="product-title"><?php echo htmlspecialchars($product['title']); ?></h2>
+                            <div class="product-price">₹<?php echo number_format($product['price'], 2); ?></div>
                             <div class="product-seller">
                                 <i class="fas fa-store"></i>
-                                <?php echo htmlspecialchars($row['seller_name']); ?>
+                                <?php echo htmlspecialchars($product['seller_name']); ?>
                             </div>
                             <div class="product-actions">
-                                <a href="product_detail.php?id=<?php echo $row['id']; ?>" class="btn btn-primary">
+                                <a href="product_detail.php?id=<?php echo $product['id']; ?>" class="btn btn-primary">
                                     <i class="fas fa-eye"></i> View Details
                                 </a>
                             </div>
                         </div>
                     </div>
                 <?php endwhile; ?>
-            </div>
-        <?php else: ?>
-            <div class="no-products">
-                <i class="fas fa-box-open fa-3x mb-3"></i>
-                <p>No products found at the moment.</p>
-            </div>
-        <?php endif; ?>
+            <?php else: ?>
+                <div class="no-products">
+                    <i class="fas fa-box-open fa-3x" style="color: #6c757d; margin-bottom: 15px;"></i>
+                    <h3>No Products Available</h3>
+                    <p>Check back later for new products!</p>
+                </div>
+            <?php endif; ?>
+        </div>
     </div>
 
-<?php include('../../includes/footer.php'); ?>
-
+    <?php include('../../includes/footer.php'); ?>
 </body>
 </html>

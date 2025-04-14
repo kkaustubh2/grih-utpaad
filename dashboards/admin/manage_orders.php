@@ -83,13 +83,26 @@ $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
 $items_per_page = 10;
 $offset = ($page - 1) * $items_per_page;
 
+// Get order statistics
+$stats_query = "SELECT 
+    COUNT(*) as total_orders,
+    SUM(CASE WHEN o.status = 'pending' THEN 1 ELSE 0 END) as pending_orders,
+    SUM(CASE WHEN o.status = 'fulfilled' THEN 1 ELSE 0 END) as fulfilled_orders,
+    SUM(CASE WHEN o.status = 'cancelled' THEN 1 ELSE 0 END) as cancelled_orders,
+    SUM(o.total_price) as total_revenue
+FROM orders o
+JOIN products p ON o.product_id = p.id
+JOIN users s ON p.user_id = s.id
+WHERE s.role = 'female_householder'";
+$stats = $conn->query($stats_query)->fetch_assoc();
+
 // Build the base query
 $base_query = "
     FROM orders o 
     JOIN products p ON o.product_id = p.id 
     JOIN users c ON o.consumer_id = c.id
     JOIN users s ON p.user_id = s.id
-    WHERE 1=1
+    WHERE s.role = 'female_householder'
 ";
 
 // Add filters to query
@@ -136,27 +149,95 @@ $query = "
     LIMIT ? OFFSET ?
 ";
 
-$stmt = $conn->prepare($query);
-if (!empty($params)) {
-    $params[] = $items_per_page;
-    $params[] = $offset;
-    $param_types .= "ii";
-    $stmt->bind_param($param_types, ...$params);
-} else {
-    $stmt->bind_param("ii", $items_per_page, $offset);
-}
-$stmt->execute();
-$orders = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+// Add pagination parameters to the existing params array
+$params[] = $items_per_page;
+$params[] = $offset;
+$param_types .= "ii";
 
-// Get order statistics
-$stats_query = "SELECT 
-    COUNT(*) as total_orders,
-    SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_orders,
-    SUM(CASE WHEN status = 'fulfilled' THEN 1 ELSE 0 END) as fulfilled_orders,
-    SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled_orders,
-    SUM(total_price) as total_revenue
-FROM orders";
-$stats = $conn->query($stats_query)->fetch_assoc();
+// Prepare and execute the statement with error handling
+$stmt = $conn->prepare($query);
+if (!$stmt) {
+    die("Prepare failed: " . $conn->error);
+}
+
+if (!empty($params)) {
+    if (!$stmt->bind_param($param_types, ...$params)) {
+        die("Binding parameters failed: " . $stmt->error);
+    }
+}
+
+if (!$stmt->execute()) {
+    die("Execute failed: " . $stmt->error);
+}
+
+$result = $stmt->get_result();
+if (!$result) {
+    die("Getting result set failed: " . $stmt->error);
+}
+
+$orders = $result->fetch_all(MYSQLI_ASSOC);
+
+// Add product approval section
+$pending_products = $conn->query("
+    SELECT p.*, u.name as seller_name,
+    CASE 
+        WHEN p.approved = 1 AND p.is_approved = 1 THEN 'approved'
+        WHEN p.approved = 2 OR p.is_approved = 2 THEN 'cancelled'
+        ELSE 'pending'
+    END as status
+    FROM products p
+    JOIN users u ON p.user_id = u.id
+    WHERE u.role = 'female_householder'
+    ORDER BY p.created_at DESC
+")->fetch_all(MYSQLI_ASSOC);
+
+// Handle product approval/cancellation
+if (isset($_POST['action']) && isset($_POST['product_id'])) {
+    $product_id = (int)$_POST['product_id'];
+    $admin_id = $_SESSION['user']['id'];
+    $action = $_POST['action'];
+    
+    if ($action === 'approve_product') {
+        $status_value = 1;
+        $action_type = 'APPROVE';
+        $success_message = "Product approved successfully!";
+    } else if ($action === 'cancel_product') {
+        $status_value = 2;
+        $action_type = 'CANCEL';
+        $success_message = "Product cancelled successfully!";
+    }
+    
+    $stmt = $conn->prepare("
+        UPDATE products 
+        SET approved = ?,
+            is_approved = ?,
+            approved_by = ?, 
+            approved_at = CURRENT_TIMESTAMP 
+        WHERE id = ?
+    ");
+    $stmt->bind_param("iiii", $status_value, $status_value, $admin_id, $product_id);
+    
+    if ($stmt->execute()) {
+        $_SESSION['success'] = $success_message;
+        
+        // Log the action
+        $log_stmt = $conn->prepare("
+            INSERT INTO admin_logs (admin_id, action, table_affected, record_id, new_values) 
+            VALUES (?, ?, 'products', ?, ?)
+        ");
+        $log_data = json_encode([
+            'status' => $action_type,
+            'timestamp' => date('Y-m-d H:i:s')
+        ]);
+        $log_stmt->bind_param("isis", $admin_id, $action_type, $product_id, $log_data);
+        $log_stmt->execute();
+    } else {
+        $_SESSION['error'] = "Failed to update product status.";
+    }
+    
+    header('Location: manage_orders.php');
+    exit();
+}
 ?>
 
 <!DOCTYPE html>
@@ -386,22 +467,11 @@ $stats = $conn->query($stats_query)->fetch_assoc();
 
             <!-- Add transparency info box -->
             <div class="transparency-box">
-                <h4>Order Status Management:</h4>
-                <div class="status-guide">
-                    <div class="status-item">
-                        <i class="fas fa-clock" style="color: #ffc107;"></i>
-                        <span>Pending: Awaiting processing</span>
-                    </div>
-                    <div class="status-item">
-                        <i class="fas fa-check" style="color: #28a745;"></i>
-                        <span>Fulfilled: Order completed</span>
-                    </div>
-                    <div class="status-item">
-                        <i class="fas fa-times" style="color: #dc3545;"></i>
-                        <span>Cancelled: Order cancelled</span>
-                    </div>
-                </div>
-                <p style="margin-top: 10px;"><i class="fas fa-exclamation-circle"></i> All status changes require a reason and will notify both buyer and seller</p>
+                <h4>Orders Management Overview</h4>
+                <p><i class="fas fa-female"></i> Showing orders from female householder products only</p>
+                <p><i class="fas fa-info-circle"></i> Monitor and manage order fulfillment</p>
+                <p><i class="fas fa-history"></i> Track order status changes and updates</p>
+                <p><i class="fas fa-shield-alt"></i> Ensure timely delivery and customer satisfaction</p>
             </div>
 
             <div class="stats-grid">
@@ -458,6 +528,83 @@ $stats = $conn->query($stats_query)->fetch_assoc();
                     <i class="fas fa-exclamation-circle"></i> <?php echo $_SESSION['error']; unset($_SESSION['error']); ?>
                 </div>
             <?php endif; ?>
+
+            <!-- Add product approval section before orders table -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3><i class="fas fa-box"></i> Product Management</h3>
+                </div>
+                <div class="card-body">
+                    <?php if (empty($pending_products)): ?>
+                        <div class="alert alert-info">
+                            <i class="fas fa-check-double"></i> No products to display.
+                        </div>
+                    <?php else: ?>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Image</th>
+                                        <th>Title</th>
+                                        <th>Seller</th>
+                                        <th>Price</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($pending_products as $product): ?>
+                                        <tr>
+                                            <td>
+                                                <img src="../../assets/uploads/<?php echo htmlspecialchars($product['image']); ?>" 
+                                                     alt="Product Image" 
+                                                     style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
+                                            </td>
+                                            <td><?php echo htmlspecialchars($product['title']); ?></td>
+                                            <td><?php echo htmlspecialchars($product['seller_name']); ?></td>
+                                            <td>₹<?php echo number_format($product['price'], 2); ?></td>
+                                            <td>
+                                                <span class="status-badge status-<?php echo $product['status']; ?>">
+                                                    <?php 
+                                                    switch($product['status']) {
+                                                        case 'approved':
+                                                            echo '<i class="fas fa-check-circle"></i> Approved';
+                                                            break;
+                                                        case 'cancelled':
+                                                            echo '<i class="fas fa-times-circle"></i> Cancelled';
+                                                            break;
+                                                        default:
+                                                            echo '<i class="fas fa-clock"></i> Pending';
+                                                    }
+                                                    ?>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <?php if ($product['status'] === 'pending'): ?>
+                                                    <form method="POST" style="display: inline;">
+                                                        <input type="hidden" name="action" value="approve_product">
+                                                        <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
+                                                        <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Are you sure you want to approve this product?')">
+                                                            <i class="fas fa-check"></i> Approve
+                                                        </button>
+                                                    </form>
+                                                    <form method="POST" style="display: inline; margin-left: 5px;">
+                                                        <input type="hidden" name="action" value="cancel_product">
+                                                        <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
+                                                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to cancel this product?')">
+                                                            <i class="fas fa-times"></i> Cancel
+                                                        </button>
+                                                    </form>
+                                                <?php endif; ?>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
 
             <?php if (empty($orders)): ?>
                 <div class="alert alert-info">

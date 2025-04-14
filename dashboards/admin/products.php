@@ -12,6 +12,7 @@ $query = "
     SELECT p.*, u.name AS seller 
     FROM products p 
     JOIN users u ON p.user_id = u.id 
+    WHERE u.role = 'female_householder'
     ORDER BY p.created_at DESC
 ";
 $result = $conn->query($query);
@@ -160,6 +161,7 @@ $result = $conn->query($query);
             <!-- Add transparency info box -->
             <div class="transparency-box">
                 <h4>Product Management Guidelines:</h4>
+                <p><i class="fas fa-female"></i> Showing products from female householders only</p>
                 <p><i class="fas fa-info-circle"></i> Monitor product listings for quality and compliance</p>
                 <p><i class="fas fa-exclamation-triangle"></i> Removing a product will notify the seller</p>
                 <p><i class="fas fa-history"></i> Deleted products can be relisted by sellers</p>

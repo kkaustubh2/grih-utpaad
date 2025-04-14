@@ -1,13 +1,34 @@
 <?php
 session_start();
 
+// Debugging information
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 // Check if user is logged in and is an admin
 if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'admin') {
-    header('Location: login.php');
-    exit();
+    die("Access Denied. User Role: " . (isset($_SESSION['user']) ? $_SESSION['user']['role'] : 'Not logged in'));
 }
 
 require_once('../../config/db.php');
+
+// Debug query
+$debug_query = "
+    SELECT p.*, u.name as seller_name, u.role as seller_role 
+    FROM products p
+    JOIN users u ON p.user_id = u.id
+    WHERE (p.approved = 0 OR p.is_approved = 0) 
+    AND u.role = 'female_householder'
+";
+$debug_result = $conn->query($debug_query);
+echo "<pre style='background: #f5f5f5; padding: 10px; margin: 10px;'>";
+echo "Number of products found: " . $debug_result->num_rows . "\n";
+while ($row = $debug_result->fetch_assoc()) {
+    echo "Product: {$row['title']} (ID: {$row['id']})\n";
+    echo "Seller: {$row['seller_name']} (Role: {$row['seller_role']})\n";
+    echo "Approval Status: approved={$row['approved']}, is_approved={$row['is_approved']}\n\n";
+}
+echo "</pre>";
 
 // Handle product approval/rejection
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['product_id'])) {
@@ -18,7 +39,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['product_id'])) {
     if ($action === 'approve') {
         $stmt = $conn->prepare("
             UPDATE products 
-            SET approved = 1, 
+            SET approved = 1,
+                is_approved = 1,
                 approved_by = ?, 
                 approved_at = CURRENT_TIMESTAMP 
             WHERE id = ?
@@ -42,7 +64,8 @@ $products = $conn->query("
     SELECT p.*, u.name as seller_name 
     FROM products p
     JOIN users u ON p.user_id = u.id
-    WHERE p.approved = 0
+    WHERE (p.approved = 0 OR p.is_approved = 0) 
+    AND u.role = 'female_householder'
     ORDER BY p.created_at DESC
 ")->fetch_all(MYSQLI_ASSOC);
 ?>
@@ -230,6 +253,7 @@ $products = $conn->query("
             <!-- Add transparency info box -->
             <div class="transparency-box">
                 <h4>Product Approval Guidelines:</h4>
+                <p><i class="fas fa-female"></i> Showing products from female householders only</p>
                 <div class="approval-guide">
                     <div class="guide-item">
                         <i class="fas fa-image"></i>

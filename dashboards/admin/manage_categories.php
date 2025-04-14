@@ -1,9 +1,9 @@
 <?php
-session_start();
+require_once('../../includes/auth.php');
 
-// Check if user is logged in and is an admin
-if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'admin') {
-    header('Location: login.php');
+// Additional role check for admin
+if ($_SESSION['user']['role'] !== 'admin') {
+    header('Location: ../../login.php');
     exit();
 }
 
@@ -54,16 +54,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 break;
 
             case 'delete':
+                // First, update all products in this category to have NULL category_id
+                $update_stmt = $conn->prepare("UPDATE products SET category_id = NULL WHERE category_id = ?");
+                $update_stmt->bind_param("i", $_POST['category_id']);
+                $update_stmt->execute();
+                
+                // Then delete the category
                 $stmt = $conn->prepare("DELETE FROM product_categories WHERE id = ?");
                 $stmt->bind_param("i", $_POST['category_id']);
                 $stmt->execute();
                 
-                // Log the action
+                // Log both actions
                 $log_stmt = $conn->prepare("
-                    INSERT INTO admin_logs (admin_id, action, table_affected, record_id) 
-                    VALUES (?, 'DELETE_CATEGORY', 'product_categories', ?)
+                    INSERT INTO admin_logs (admin_id, action, table_affected, record_id, new_values) 
+                    VALUES (?, 'DELETE_CATEGORY', 'product_categories', ?, ?)
                 ");
-                $log_stmt->bind_param("ii", $admin_id, $_POST['category_id']);
+                $log_data = json_encode([
+                    'affected_products' => $update_stmt->affected_rows,
+                    'timestamp' => date('Y-m-d H:i:s')
+                ]);
+                $log_stmt->bind_param("iis", $admin_id, $_POST['category_id'], $log_data);
                 $log_stmt->execute();
                 break;
         }
@@ -240,15 +250,13 @@ $categories = $conn->query("
                             ?>)">
                                 <i class="fas fa-edit"></i> Edit
                             </button>
-                            <?php if ($category['product_count'] == 0): ?>
-                                <form method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this category?');">
-                                    <input type="hidden" name="action" value="delete">
-                                    <input type="hidden" name="category_id" value="<?php echo $category['id']; ?>">
-                                    <button type="submit" class="btn btn-block">
-                                        <i class="fas fa-trash"></i> Delete
-                                    </button>
-                                </form>
-                            <?php endif; ?>
+                            <form method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this category?' + (<?php echo $category['product_count']; ?> > 0 ? '\n\nThis category contains <?php echo $category['product_count']; ?> product(s). These products will be uncategorized but not deleted.' : ''));">
+                                <input type="hidden" name="action" value="delete">
+                                <input type="hidden" name="category_id" value="<?php echo $category['id']; ?>">
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </form>
                         </div>
                     </div>
                 <?php endforeach; ?>

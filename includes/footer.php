@@ -89,10 +89,10 @@
                     "></span>
         </h3>
         <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px;">
-          <li><a href="index.php" style="color: #e0f2f1; text-decoration: none;">Home</a></li>
-          <li><a href="about.php" style="color: #e0f2f1; text-decoration: none;">About Us</a></li>
-          <li><a href="products.php" style="color: #e0f2f1; text-decoration: none;">Products</a></li>
-          <li><a href="contact.php" style="color: #e0f2f1; text-decoration: none;">Contact</a></li>
+          <li><a href="../../index.php" style="color: #e0f2f1; text-decoration: none;">Home</a></li>
+          <li><a href="../../about.php" style="color: #e0f2f1; text-decoration: none;">About Us</a></li>
+          <li><a href="../../products.php" style="color: #e0f2f1; text-decoration: none;">Products</a></li>
+          <li><a href="../../contact.php" style="color: #e0f2f1; text-decoration: none;">Contact</a></li>
         </ul>
       </div>
 
@@ -161,14 +161,6 @@
       <p style="color: #b2dfdb; margin: 0;">
         &copy; <?php echo date('Y'); ?> Grih Utpaad. All rights reserved.
       </p>
-      <div style="display: flex; gap: 10px; align-items: center;">
-        <p style="color: #b2dfdb; margin: 0;">
-          Made with <i class="fas fa-heart" style="color: #ff6b6b;"></i> by
-          <span style="color: white;">Kaustubh</span>,
-          <span style="color: white;">Shivam</span>,
-          <span style="color: white;">Akash</span>
-        </p>
-      </div>
       <div style="display: flex; gap: 15px;">
         <a href="privacy.php" style="color: #b2dfdb; text-decoration: none;">Privacy Policy</a>
         <span style="color: #007B5E;">|</span>

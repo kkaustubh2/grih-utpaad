@@ -15,17 +15,22 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $user = $result->fetch_assoc();
 
     if ($user && password_verify($password, $user['password'])) {
-        $_SESSION['user'] = $user;
-
-        // Redirect based on role
-        if ($user['role'] === 'webmaster') {
-            header("Location: ../dashboards/webmaster/index.php");
-        } elseif ($user['role'] === 'female_householder') {
-            header("Location: ../dashboards/female_householders/index.php");
+        // Check if user is blocked
+        if ($user['is_blocked']) {
+            $errors[] = "Your account has been blocked. Please contact the administrator.";
         } else {
-            header("Location: ../dashboards/consumers/index.php");
+            $_SESSION['user'] = $user;
+
+            // Redirect based on role
+            if ($user['role'] === 'webmaster') {
+                header("Location: ../dashboards/webmaster/index.php");
+            } elseif ($user['role'] === 'female_householder') {
+                header("Location: ../dashboards/female_householders/index.php");
+            } else {
+                header("Location: ../dashboards/consumers/index.php");
+            }
+            exit;
         }
-        exit;
     } else {
         $errors[] = "Invalid email or password.";
     }
