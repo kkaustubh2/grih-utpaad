@@ -70,7 +70,7 @@ if (!empty($reviews)) {
 <!DOCTYPE html>
 <html>
 <head>
-    <title><?php echo htmlspecialchars($product['name']); ?> - Product Detail</title>
+    <title><?php echo htmlspecialchars($product['title']); ?> - Product Detail</title>
     <link rel="stylesheet" href="assets/uploads/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
@@ -96,18 +96,15 @@ if (!empty($reviews)) {
             margin-top: 20px;
         }
         .product-image {
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            background: #f8f9fa;
-            min-height: 200px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
         .product-image img {
-            width: 100%;
-            height: 100%;
+            max-width: 100%;
+            max-height: 800px;
+            width: auto;
+            height: auto;
             object-fit: contain;
             display: block;
         }
@@ -159,11 +156,18 @@ if (!empty($reviews)) {
 
         <div class="product-grid">
             <div class="product-image">
-                <img src="<?php echo htmlspecialchars($product['image_url']); ?>" 
-                     alt="<?php echo htmlspecialchars($product['name']); ?>">
+                <?php if (!empty($product['image'])): ?>
+                    <img src="assets/uploads/<?php echo htmlspecialchars($product['image']); ?>" 
+                         alt="<?php echo htmlspecialchars($product['title']); ?>">
+                <?php else: ?>
+                    <div style="text-align: center; padding: 20px;">
+                        <i class="fas fa-store" style="font-size: 48px; color: #007B5E;"></i>
+                        <p style="color: #666;">No image available</p>
+                    </div>
+                <?php endif; ?>
             </div>
             <div class="product-info">
-                <h1><?php echo htmlspecialchars($product['name']); ?></h1>
+                <h1><?php echo htmlspecialchars($product['title']); ?></h1>
                 <div class="price">₹<?php echo number_format($product['price'], 2); ?></div>
                 <div class="seller-info">
                     <h3><i class="fas fa-store"></i> Seller Information</h3>

@@ -9,6 +9,12 @@ if ($_SESSION['user']['role'] !== 'consumer') {
 
 require_once('../../config/db.php');
 
+// Get cart count
+$cart_count_query = $conn->prepare("SELECT COUNT(*) as count FROM cart WHERE consumer_id = ?");
+$cart_count_query->bind_param("i", $_SESSION['user']['id']);
+$cart_count_query->execute();
+$cart_count = $cart_count_query->get_result()->fetch_assoc()['count'];
+
 $product_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
 // Fetch product details with seller info and category
@@ -104,23 +110,14 @@ $reviews = $reviews_stmt->get_result();
             margin-bottom: 40px;
         }
         .product-image-section {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px);
-            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         .product-image {
-            width: 90%;
-            height: 90vh;
-            object-fit: contain;
-            border-radius: 10px;
-            transition: transform 0.3s ease;
-            margin: 0 auto;
-        }
-        .product-image:hover {
-            transform: scale(1.02);
+            width: 100%;
+            max-width: 900px;
+            height: auto;
         }
         .product-details {
             background: rgba(255, 255, 255, 0.9);
@@ -272,6 +269,45 @@ $reviews = $reviews_stmt->get_result();
             color: #005b46;
             transform: translateX(-5px);
         }
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(40, 167, 69, 0.1);
+            color: #28a745;
+            border: 1px solid rgba(40, 167, 69, 0.2);
+        }
+        .cart-btn {
+            background: #007B5E;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            margin-right: 15px;
+        }
+        .cart-btn:hover {
+            background: #005b46;
+            transform: translateY(-2px);
+        }
+        .cart-count {
+            background: white;
+            color: #007B5E;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
         @media (max-width: 768px) {
             .product-container {
                 grid-template-columns: 1fr;
@@ -293,15 +329,31 @@ $reviews = $reviews_stmt->get_result();
 </head>
 <body>
     <div class="container">
+        <?php if (isset($_GET['cart']) && $_GET['cart'] === 'added'): ?>
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i>
+                Product added to cart successfully!
+            </div>
+        <?php endif; ?>
+
         <div class="header">
             <div class="user-info">
                 <i class="fas fa-user-circle fa-2x" style="color: #007B5E;"></i>
                 <span class="user-name">Welcome, <?php echo htmlspecialchars($_SESSION['user']['name']); ?></span>
             </div>
-            <a href="../../logout.php" class="logout-btn">
-                <i class="fas fa-sign-out-alt"></i>
-                Logout
-            </a>
+            <div style="display: flex; align-items: center;">
+                <a href="view_cart.php" class="cart-btn">
+                    <i class="fas fa-shopping-cart"></i>
+                    Cart
+                    <?php if ($cart_count > 0): ?>
+                        <span class="cart-count"><?php echo $cart_count; ?></span>
+                    <?php endif; ?>
+                </a>
+                <a href="../../logout.php" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </a>
+            </div>
         </div>
 
         <a href="view_product.php" class="back-link">
@@ -310,10 +362,17 @@ $reviews = $reviews_stmt->get_result();
 
         <div class="product-container">
             <div class="product-image-section">
-                <img src="../../assets/uploads/<?php echo htmlspecialchars($product['image']); ?>" 
-                     alt="<?php echo htmlspecialchars($product['title']); ?>"
-                     class="product-image"
-                     loading="lazy">
+                <?php if (!empty($product['image'])): ?>
+                    <img src="../../assets/uploads/<?php echo htmlspecialchars($product['image']); ?>" 
+                         alt="<?php echo htmlspecialchars($product['title']); ?>"
+                         class="product-image"
+                         loading="lazy">
+                <?php else: ?>
+                    <div style="text-align: center; padding: 20px;">
+                        <i class="fas fa-store" style="font-size: 48px; color: #007B5E;"></i>
+                        <p style="color: #666;">No image available</p>
+                    </div>
+                <?php endif; ?>
             </div>
 
             <div class="product-details">
@@ -358,9 +417,8 @@ $reviews = $reviews_stmt->get_result();
                 </div>
 
                 <div class="action-buttons">
-                    <form action="place_order.php" method="POST" style="flex: 1;">
+                    <form action="add_to_cart.php" method="POST" style="flex: 1;">
                         <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
-                        <input type="hidden" name="action" value="add_to_cart">
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-shopping-cart"></i> Add to Cart
                         </button>
@@ -370,7 +428,7 @@ $reviews = $reviews_stmt->get_result();
                         <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
                         <input type="hidden" name="action" value="direct_order">
                         <button type="submit" class="btn btn-secondary">
-                            <i class="fas fa-bolt"></i> Place Order Now
+                            <i class="fas fa-bolt"></i> Buy Now
                         </button>
                     </form>
                 </div>

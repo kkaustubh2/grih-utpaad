@@ -99,6 +99,39 @@ $categories = $conn->query("
     <link rel="stylesheet" href="../../assets/uploads/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background-image: url('../../assets/images/background.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            font-family: 'Segoe UI', sans-serif;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.85);
+            z-index: 1;
+        }
+
+        .container {
+            position: relative;
+            z-index: 2;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
         .category-card {
             background: white;
             border-radius: 12px;
@@ -109,27 +142,66 @@ $categories = $conn->query("
             justify-content: space-between;
             align-items: center;
         }
+
         .category-info {
             flex: 1;
         }
+
         .category-name {
             font-size: 1.2rem;
             color: #2c3e50;
             margin-bottom: 5px;
         }
+
         .category-description {
             color: #6c757d;
             font-size: 0.9rem;
         }
+
         .category-meta {
             color: #007B5E;
             font-size: 0.85rem;
             margin-top: 5px;
         }
+
         .category-actions {
             display: flex;
             gap: 10px;
         }
+
+        .btn-add-category {
+            margin-bottom: 20px;
+        }
+
+        .product-count {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #e9f5f1;
+            color: #007B5E;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            margin-left: 10px;
+        }
+
+        .transparency-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007B5E;
+        }
+
+        .transparency-box h4 {
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        .transparency-box p {
+            margin: 5px 0;
+            color: #666;
+        }
+
         .modal {
             display: none;
             position: fixed;
@@ -140,7 +212,9 @@ $categories = $conn->query("
             background: rgba(0, 0, 0, 0.5);
             align-items: center;
             justify-content: center;
+            z-index: 1000;
         }
+
         .modal-content {
             background: white;
             padding: 30px;
@@ -149,6 +223,7 @@ $categories = $conn->query("
             max-width: 500px;
             position: relative;
         }
+
         .close-modal {
             position: absolute;
             top: 15px;
@@ -157,44 +232,75 @@ $categories = $conn->query("
             cursor: pointer;
             color: #6c757d;
         }
-        .btn-add-category {
-            margin-bottom: 20px;
-        }
-        .product-count {
-            display: inline-block;
-            padding: 2px 8px;
-            background: #e9f5f1;
-            color: #007B5E;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            margin-left: 10px;
-        }
-        .transparency-box {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border-left: 4px solid #007B5E;
-        }
-        .transparency-box h4 {
-            color: #2c3e50;
-            margin-top: 0;
-            margin-bottom: 10px;
-        }
-        .transparency-box p {
-            margin: 5px 0;
-            color: #666;
-        }
-        .container {
-            background-color: rgba(255, 255, 255, 0.8);
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        .card {
-            background-color: rgba(255, 255, 255, 0.9);
+
+        .btn {
+            background: #007B5E;
+            color: white;
             border: none;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background: #005b46;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #007B5E;
+            box-shadow: 0 0 0 2px rgba(0, 123, 94, 0.2);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: #007B5E;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            background: #005b46;
+            transform: translateY(-2px);
         }
     </style>
 </head>

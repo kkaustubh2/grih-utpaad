@@ -118,6 +118,47 @@ $users = $conn->query("
     <link rel="stylesheet" href="../../assets/uploads/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background-image: url('../../assets/images/background.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            font-family: 'Segoe UI', sans-serif;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.85);
+            z-index: 1;
+        }
+
+        .container {
+            position: relative;
+            z-index: 2;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
         .stats-badge {
             background: rgba(233, 245, 241, 0.8);
             color: #007B5E;
@@ -126,37 +167,46 @@ $users = $conn->query("
             font-size: 0.85rem;
             margin-left: 8px;
         }
+
         .user-status {
             padding: 4px 8px;
             border-radius: 12px;
             font-size: 0.85rem;
             font-weight: 500;
         }
+
         .status-active {
             background: rgba(212, 237, 218, 0.8);
             color: #155724;
         }
+
         .status-blocked {
             background: rgba(248, 215, 218, 0.8);
             color: #721c24;
         }
+
         .action-btn {
             padding: 6px 12px;
             font-size: 0.9rem;
             margin: 0 4px;
         }
+
         .btn-block {
             background-color: #dc3545;
         }
+
         .btn-block:hover {
             background-color: #c82333;
         }
+
         .btn-unblock {
             background-color: #28a745;
         }
+
         .btn-unblock:hover {
             background-color: #218838;
         }
+
         .user-role {
             display: inline-block;
             padding: 4px 8px;
@@ -167,28 +217,35 @@ $users = $conn->query("
             color: #495057;
             margin-right: 8px;
         }
+
         .search-box {
             margin-bottom: 20px;
             display: flex;
             gap: 10px;
         }
+
         .search-input {
             flex: 1;
             max-width: 300px;
         }
+
         .filter-select {
             width: auto;
             margin-bottom: 0;
         }
+
         .audit-log {
             margin-top: 30px;
-            background: #f8f9fa;
+            background: white;
             padding: 20px;
             border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
+
         .action-reason {
             margin-top: 10px;
         }
+
         .action-reason textarea {
             width: 100%;
             padding: 8px;
@@ -196,6 +253,7 @@ $users = $conn->query("
             border-radius: 4px;
             border: 1px solid #ced4da;
         }
+
         .modal {
             display: none;
             position: fixed;
@@ -203,122 +261,90 @@ $users = $conn->query("
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.5);
-        }
-        .modal-content {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            margin: 15% auto;
-            padding: 20px;
-            width: 50%;
-            border-radius: 8px;
-        }
-        .transparency-box {
-            background: rgba(248, 249, 250, 0.8);
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border-left: 4px solid #007B5E;
-        }
-        .transparency-box h4 {
-            color: #2c3e50;
-            margin-top: 0;
-            margin-bottom: 10px;
-        }
-        .transparency-box p {
-            margin: 5px 0;
-            color: #666;
-        }
-        .status-guide {
-            display: flex;
-            gap: 20px;
-            margin-top: 10px;
-            flex-wrap: wrap;
-        }
-        .status-item {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            color: #666;
-        }
-        .container {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(10px);
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        .card {
-            background: rgba(255, 255, 255, 0.7);
-            border: none;
-            backdrop-filter: blur(5px);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        table {
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 8px;
-            overflow: hidden;
-        }
-        thead {
-            background: rgba(0, 123, 94, 0.1);
-        }
-        tbody tr:hover {
-            background: rgba(255, 255, 255, 0.5);
-        }
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        .action-group {
-            flex: 1;
-            min-width: 200px;
-        }
-        .action-reason {
-            margin-bottom: 10px;
-        }
-        .action-reason textarea {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            resize: vertical;
-            min-height: 60px;
-        }
-        .btn-block, .btn-unblock {
-            width: 100%;
-            padding: 8px 16px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 500;
-            display: flex;
+            background: rgba(0, 0, 0, 0.5);
             align-items: center;
             justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6c757d;
+        }
+
+        .btn {
+            background: #007B5E;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
             gap: 8px;
+        }
+
+        .btn:hover {
+            background: #005b46;
+            transform: translateY(-2px);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: #007B5E;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            margin-bottom: 20px;
             transition: all 0.3s ease;
         }
-        .btn-block {
-            background-color: #dc3545;
-            color: white;
+
+        .back-link:hover {
+            background: #005b46;
+            transform: translateY(-2px);
         }
-        .btn-block:hover {
-            background-color: #c82333;
+
+        .form-group {
+            margin-bottom: 1rem;
         }
-        .btn-unblock {
-            background-color: #28a745;
-            color: white;
-        }
-        .btn-unblock:hover {
-            background-color: #218838;
-        }
-        .status-blocked {
-            color: #dc3545;
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
             font-weight: 500;
         }
-        .status-active {
-            color: #28a745;
-            font-weight: 500;
+
+        .form-control {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #007B5E;
+            box-shadow: 0 0 0 2px rgba(0, 123, 94, 0.2);
         }
     </style>
 </head>

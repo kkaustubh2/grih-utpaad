@@ -70,21 +70,21 @@ if ($check_table->num_rows == 0) {
 }
 
 // Base query with simpler WHERE clause initially
-$query = "SELECT p.*, c.name as category_name, u.name as seller_name, u.id as seller_id 
+$query = "SELECT p.*, pc.name as category_name, u.name as seller_name, u.id as seller_id 
           FROM products p 
-          LEFT JOIN categories c ON p.category_id = c.id
+          LEFT JOIN product_categories pc ON p.category_id = pc.id
           LEFT JOIN users u ON p.user_id = u.id
           WHERE 1=1";
 
 // Apply filters
 if (!empty($category)) {
     $category = mysqli_real_escape_string($conn, $category);
-    $query .= " AND c.name = '$category'";
+    $query .= " AND pc.name = '$category'";
 }
 
 if (!empty($search)) {
     $search = mysqli_real_escape_string($conn, $search);
-    $query .= " AND (p.name LIKE '%$search%' OR p.description LIKE '%$search%')";
+    $query .= " AND (p.title LIKE '%$search%' OR p.description LIKE '%$search%')";
 }
 
 if (isset($min_price) && isset($max_price)) {
@@ -208,8 +208,9 @@ $categories = $conn->query("SELECT DISTINCT name FROM product_categories ORDER B
 
         .product-image-container {
             width: 100%;
-            height: 200px;
-            background: #f8f9fa;
+            height: 300px;
+            background: white;
+            border-radius: 15px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -217,8 +218,8 @@ $categories = $conn->query("SELECT DISTINCT name FROM product_categories ORDER B
         }
 
         .product-image {
-            width: 100%;
-            height: 100%;
+            max-width: 100%;
+            max-height: 300px;
             object-fit: contain;
         }
 
@@ -341,9 +342,9 @@ $categories = $conn->query("SELECT DISTINCT name FROM product_categories ORDER B
             <?php while ($product = $result->fetch_assoc()): ?>
                 <div class="product-card">
                     <div class="product-image-container">
-                        <?php if (!empty($product['image_url'])): ?>
-                            <img src="<?= htmlspecialchars($product['image_url']) ?>" 
-                                 alt="<?= htmlspecialchars($product['name'] ?? 'Product Image') ?>" 
+                        <?php if (!empty($product['image'])): ?>
+                            <img src="assets/uploads/<?= htmlspecialchars($product['image']) ?>" 
+                                 alt="<?= htmlspecialchars($product['title'] ?? 'Product Image') ?>" 
                                  class="product-image">
                         <?php else: ?>
                             <div style="text-align: center; padding: 20px;">
@@ -357,7 +358,7 @@ $categories = $conn->query("SELECT DISTINCT name FROM product_categories ORDER B
                             <?= htmlspecialchars($product['category_name'] ?? 'Uncategorized') ?>
                         </div>
                         <h3 class="product-name">
-                            <?= htmlspecialchars($product['name'] ?? 'Unnamed Product') ?>
+                            <?= htmlspecialchars($product['title'] ?? 'Unnamed Product') ?>
                         </h3>
                         <div class="product-price">
                             ₹<?= number_format($product['price'] ?? 0, 2) ?>

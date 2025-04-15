@@ -1,34 +1,57 @@
 <?php
 require_once('../../includes/auth.php');
+
+// Additional role check for consumer
+if ($_SESSION['user']['role'] !== 'consumer') {
+    header('Location: ../../index.php');
+    exit();
+}
+
 require_once('../../config/db.php');
 
-$order_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+// Get cart count for header
+$cart_count_query = $conn->prepare("SELECT COUNT(*) as count FROM cart WHERE consumer_id = ?");
+$cart_count_query->bind_param("i", $_SESSION['user']['id']);
+$cart_count_query->execute();
+$cart_count = $cart_count_query->get_result()->fetch_assoc()['count'];
 
-// Fetch order details with product and seller information
-$stmt = $conn->prepare("
-    SELECT o.*, p.title as product_title, p.price as unit_price, p.image,
-           u.name as seller_name, u.phone as seller_phone
+// Verify order exists and belongs to current user
+if (!isset($_GET['id'])) {
+    header('Location: view_product.php');
+    exit();
+}
+
+$order_id = intval($_GET['id']);
+$order_query = $conn->prepare("
+    SELECT o.*, oi.quantity, p.title, p.price, p.image
     FROM orders o
-    JOIN products p ON o.product_id = p.id
-    JOIN users u ON p.user_id = u.id
+    JOIN order_items oi ON o.id = oi.order_id
+    JOIN products p ON oi.product_id = p.id
     WHERE o.id = ? AND o.consumer_id = ?
 ");
+$order_query->bind_param("ii", $order_id, $_SESSION['user']['id']);
+$order_query->execute();
+$result = $order_query->get_result();
 
-$stmt->bind_param("ii", $order_id, $_SESSION['user']['id']);
-$stmt->execute();
-$result = $stmt->get_result();
-$order = $result->fetch_assoc();
-
-if (!$order) {
-    header("Location: view_product.php");
+if ($result->num_rows === 0) {
+    header('Location: view_product.php');
     exit();
+}
+
+$order_items = [];
+$total = 0;
+while ($item = $result->fetch_assoc()) {
+    $order = $item; // Save order details
+    $item['subtotal'] = $item['price'] * $item['quantity'];
+    $order_items[] = $item;
+    $total += $item['subtotal'];
 }
 ?>
 
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Order Confirmed - Grih Utpaad</title>
+    <title>Order Success - Grih Utpaad</title>
     <link rel="stylesheet" href="../../assets/uploads/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
@@ -38,225 +61,188 @@ if (!$order) {
             min-height: 100vh;
             background: linear-gradient(135deg, #f8f9fa 0%, #e9f5f1 100%);
             font-family: 'Segoe UI', sans-serif;
-            color: #2c3e50;
         }
         .container {
-            max-width: 800px;
-            margin: 40px auto;
+            max-width: 1200px;
+            margin: 0 auto;
             padding: 20px;
         }
         .success-card {
             background: rgba(255, 255, 255, 0.9);
             border-radius: 15px;
             padding: 30px;
+            margin-top: 20px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px);
-            margin-bottom: 30px;
-        }
-        .success-header {
             text-align: center;
-            margin-bottom: 30px;
         }
         .success-icon {
+            color: #28a745;
             font-size: 4rem;
-            color: #28a745;
             margin-bottom: 20px;
-        }
-        .success-title {
-            font-size: 2rem;
-            color: #28a745;
-            margin-bottom: 10px;
-        }
-        .success-message {
-            color: #6c757d;
-            font-size: 1.1rem;
-            margin-bottom: 30px;
         }
         .order-details {
-            background: rgba(248, 249, 250, 0.8);
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 30px;
+            margin-top: 30px;
+            text-align: left;
         }
-        .order-number {
-            font-size: 1.2rem;
-            color: #007B5E;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid rgba(0,0,0,0.1);
+        .product-list {
+            margin: 20px 0;
         }
-        .product-info {
-            display: flex;
+        .product-item {
+            display: grid;
+            grid-template-columns: 80px 2fr 1fr 1fr;
             gap: 20px;
-            margin-bottom: 20px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid rgba(0,0,0,0.1);
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
         }
         .product-image {
-            width: 100px;
-            height: 100px;
-            object-fit: cover;
-            border-radius: 8px;
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
         }
-        .product-details {
-            flex: 1;
-        }
-        .product-title {
-            font-size: 1.2rem;
-            margin-bottom: 10px;
+        .product-info h3 {
+            margin: 0 0 5px 0;
+            font-size: 1.1rem;
             color: #2c3e50;
         }
-        .price-details {
-            display: grid;
-            grid-template-columns: auto auto;
-            gap: 10px;
-            margin-bottom: 20px;
+        .quantity {
+            color: #666;
         }
-        .price-label {
-            color: #6c757d;
-        }
-        .price-value {
-            text-align: right;
-            font-weight: 500;
-        }
-        .total-price {
-            font-size: 1.2rem;
+        .price {
             color: #007B5E;
             font-weight: 600;
         }
-        .shipping-info {
+        .total {
+            text-align: right;
+            font-size: 1.3rem;
+            color: #2c3e50;
             margin-top: 20px;
             padding-top: 20px;
-            border-top: 1px solid rgba(0,0,0,0.1);
+            border-top: 2px solid #eee;
         }
-        .info-title {
-            font-weight: 600;
-            margin-bottom: 10px;
-            color: #2c3e50;
-        }
-        .action-buttons {
-            display: flex;
-            gap: 15px;
+        .shipping-info {
             margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
         }
         .btn {
-            flex: 1;
-            padding: 15px 30px;
+            display: inline-block;
+            padding: 12px 25px;
             border-radius: 8px;
             text-decoration: none;
             font-weight: 600;
-            text-align: center;
+            margin-top: 20px;
             transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
         }
         .btn-primary {
             background: #007B5E;
             color: white;
         }
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
-        }
-        .btn:hover {
+        .btn-primary:hover {
+            background: #005b46;
             transform: translateY(-2px);
-            opacity: 0.9;
         }
-        .status-badge {
-            display: inline-block;
-            padding: 6px 12px;
-            border-radius: 15px;
-            font-size: 0.9rem;
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .user-name {
             font-weight: 500;
-            background: #fff3cd;
-            color: #856404;
-            margin-bottom: 15px;
+            color: #2c3e50;
         }
-        @media (max-width: 768px) {
-            .container {
-                padding: 15px;
-            }
-            .success-card {
-                padding: 20px;
-            }
-            .action-buttons {
-                flex-direction: column;
-            }
-            .product-info {
-                flex-direction: column;
-                align-items: center;
-                text-align: center;
-            }
-            .price-details {
-                grid-template-columns: 1fr;
-                text-align: center;
-            }
-            .price-value {
-                text-align: center;
-            }
+        .cart-btn {
+            background: #007B5E;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+        .cart-count {
+            background: white;
+            color: #007B5E;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="success-card">
-            <div class="success-header">
-                <i class="fas fa-check-circle success-icon"></i>
-                <h1 class="success-title">Order Confirmed!</h1>
-                <p class="success-message">Thank you for your order. We'll notify you once it's ready.</p>
+        <div class="header">
+            <div class="user-info">
+                <i class="fas fa-user-circle fa-2x" style="color: #007B5E;"></i>
+                <span class="user-name">Welcome, <?php echo htmlspecialchars($_SESSION['user']['name']); ?></span>
             </div>
+            <a href="view_cart.php" class="cart-btn">
+                <i class="fas fa-shopping-cart"></i>
+                Cart
+                <?php if ($cart_count > 0): ?>
+                    <span class="cart-count"><?php echo $cart_count; ?></span>
+                <?php endif; ?>
+            </a>
+        </div>
+
+        <div class="success-card">
+            <i class="fas fa-check-circle success-icon"></i>
+            <h1>Order Placed Successfully!</h1>
+            <p>Thank you for your order. Your order ID is: #<?php echo $order_id; ?></p>
 
             <div class="order-details">
-                <div class="order-number">
-                    <i class="fas fa-shopping-bag"></i> Order #<?php echo str_pad($order['id'], 6, '0', STR_PAD_LEFT); ?>
-                </div>
-
-                <div class="status-badge">
-                    <i class="fas fa-clock"></i> <?php echo ucfirst($order['status']); ?>
-                </div>
-
-                <div class="product-info">
-                    <img src="../../assets/uploads/<?php echo htmlspecialchars($order['image']); ?>" 
-                         alt="<?php echo htmlspecialchars($order['product_title']); ?>"
-                         class="product-image">
-                    <div class="product-details">
-                        <h3 class="product-title"><?php echo htmlspecialchars($order['product_title']); ?></h3>
-                        <div class="price-details">
-                            <span class="price-label">Unit Price:</span>
-                            <span class="price-value">₹<?php echo number_format($order['unit_price'], 2); ?></span>
+                <h2>Order Summary</h2>
+                <div class="product-list">
+                    <?php foreach ($order_items as $item): ?>
+                        <div class="product-item">
+                            <img src="../../assets/uploads/<?= htmlspecialchars($item['image']) ?>" 
+                                 alt="<?= htmlspecialchars($item['title']) ?>" 
+                                 class="product-image">
                             
-                            <span class="price-label">Quantity:</span>
-                            <span class="price-value"><?php echo $order['quantity']; ?></span>
-                            
-                            <span class="price-label">Total Amount:</span>
-                            <span class="price-value total-price">₹<?php echo number_format($order['total_price'], 2); ?></span>
+                            <div class="product-info">
+                                <h3><?= htmlspecialchars($item['title']) ?></h3>
+                            </div>
+
+                            <div class="quantity">
+                                Quantity: <?= $item['quantity'] ?>
+                            </div>
+
+                            <div class="price">
+                                ₹<?= number_format($item['subtotal'], 2) ?>
+                            </div>
                         </div>
-                    </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <div class="total">
+                    Total Amount: ₹<?= number_format($total, 2) ?>
                 </div>
 
                 <div class="shipping-info">
-                    <h4 class="info-title"><i class="fas fa-map-marker-alt"></i> Shipping Address</h4>
-                    <p><?php echo nl2br(htmlspecialchars($order['shipping_address'])); ?></p>
-                    <p><i class="fas fa-phone"></i> <?php echo htmlspecialchars($order['phone']); ?></p>
-                </div>
-
-                <div class="shipping-info">
-                    <h4 class="info-title"><i class="fas fa-store"></i> Seller Information</h4>
-                    <p><?php echo htmlspecialchars($order['seller_name']); ?></p>
-                    <p><i class="fas fa-phone"></i> <?php echo htmlspecialchars($order['seller_phone']); ?></p>
+                    <h3>Shipping Details</h3>
+                    <p><strong>Address:</strong> <?= nl2br(htmlspecialchars($order['shipping_address'])) ?></p>
+                    <p><strong>Phone:</strong> <?= htmlspecialchars($order['phone']) ?></p>
                 </div>
             </div>
 
-            <div class="action-buttons">
-                <a href="my_orders.php" class="btn btn-primary">
-                    <i class="fas fa-list"></i> View My Orders
-                </a>
-                <a href="view_product.php" class="btn btn-secondary">
-                    <i class="fas fa-shopping-bag"></i> Continue Shopping
-                </a>
-            </div>
+            <a href="view_product.php" class="btn btn-primary">Continue Shopping</a>
         </div>
     </div>
 </body>

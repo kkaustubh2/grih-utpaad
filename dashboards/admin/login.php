@@ -98,6 +98,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       width: 90%;
       padding: 20px;
       animation: fadeIn 0.5s ease-out;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     .login-card {
@@ -110,6 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       border: 1px solid rgba(255, 255, 255, 0.3);
       position: relative;
       z-index: 10;
+      width: 100%;
     }
 
     /* Footer Isolation */
@@ -196,16 +200,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       display: inline-flex;
       align-items: center;
       gap: 8px;
+      padding: 10px 20px;
+      background: rgba(255, 255, 255, 0.9);
       color: #007B5E;
       text-decoration: none;
-      margin-top: 20px;
+      border-radius: 8px;
+      font-size: 0.95rem;
       font-weight: 500;
       transition: all 0.3s ease;
+      margin-top: 20px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
     }
 
     .back-link:hover {
-      color: #005b46;
-      transform: translateX(-5px);
+      background: rgba(0, 123, 94, 0.1);
+      color: #007B5E;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .back-link i {
+      font-size: 0.9rem;
+      transition: transform 0.3s ease;
+    }
+
+    .back-link:hover i {
+      transform: translateX(-4px);
     }
 
     .error-message {
@@ -302,7 +324,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   }
   ?>
 </body>
-
-</html>
 
 </html>

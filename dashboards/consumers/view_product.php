@@ -9,6 +9,12 @@ if ($_SESSION['user']['role'] !== 'consumer') {
 
 require_once('../../config/db.php');
 
+// Get cart count
+$cart_count_query = $conn->prepare("SELECT COUNT(*) as count FROM cart WHERE consumer_id = ?");
+$cart_count_query->bind_param("i", $_SESSION['user']['id']);
+$cart_count_query->execute();
+$cart_count = $cart_count_query->get_result()->fetch_assoc()['count'];
+
 // Fetch all products with their categories
 $query = "SELECT p.*, u.name AS seller_name, pc.name AS category_name 
           FROM products p 
@@ -83,20 +89,25 @@ $result = $conn->query($query);
             overflow: hidden;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
-            height: 500px;
             display: flex;
             flex-direction: column;
-            backdrop-filter: blur(10px);
         }
         .product-card:hover {
             transform: translateY(-10px);
             box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
         }
-        .product-image {
+        .product-image-container {
             width: 100%;
             height: 300px;
-            object-fit: cover;
-            transition: transform 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .product-image {
+            max-width: 100%;
+            max-height: 300px;
+            object-fit: contain;
         }
         .product-card:hover .product-image {
             transform: scale(1.05);
@@ -223,6 +234,34 @@ $result = $conn->query($query);
                 font-size: 1.4rem;
             }
         }
+        .cart-btn {
+            background: #007B5E;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            margin-right: 15px;
+        }
+        .cart-btn:hover {
+            background: #005b46;
+            transform: translateY(-2px);
+        }
+        .cart-count {
+            background: white;
+            color: #007B5E;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -232,10 +271,19 @@ $result = $conn->query($query);
                 <i class="fas fa-user-circle fa-2x" style="color: #007B5E;"></i>
                 <span class="user-name">Welcome, <?php echo htmlspecialchars($_SESSION['user']['name']); ?></span>
             </div>
-            <a href="../../logout.php" class="logout-btn">
-                <i class="fas fa-sign-out-alt"></i>
-                Logout
-            </a>
+            <div style="display: flex; align-items: center;">
+                <a href="view_cart.php" class="cart-btn">
+                    <i class="fas fa-shopping-cart"></i>
+                    Cart
+                    <?php if ($cart_count > 0): ?>
+                        <span class="cart-count"><?php echo $cart_count; ?></span>
+                    <?php endif; ?>
+                </a>
+                <a href="../../logout.php" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </a>
+            </div>
         </div>
 
         <a href="index.php" class="back-link">
@@ -251,9 +299,18 @@ $result = $conn->query($query);
             <?php if ($result->num_rows > 0): ?>
                 <?php while ($product = $result->fetch_assoc()): ?>
                     <div class="product-card">
-                        <img src="../../assets/uploads/<?php echo htmlspecialchars($product['image']); ?>" 
-                             alt="<?php echo htmlspecialchars($product['title']); ?>" 
-                             class="product-image">
+                        <div class="product-image-container">
+                            <?php if (!empty($product['image'])): ?>
+                                <img src="../../assets/uploads/<?= htmlspecialchars($product['image']) ?>" 
+                                     alt="<?= htmlspecialchars($product['title'] ?? 'Product Image') ?>" 
+                                     class="product-image">
+                            <?php else: ?>
+                                <div style="text-align: center; padding: 20px;">
+                                    <i class="fas fa-store" style="font-size: 48px; color: #007B5E;"></i>
+                                    <p style="color: #666;">No image available</p>
+                                </div>
+                            <?php endif; ?>
+                        </div>
                         <div class="product-info">
                             <?php if ($product['category_name']): ?>
                                 <span class="product-category">

@@ -247,130 +247,417 @@ if (isset($_POST['action']) && isset($_POST['product_id'])) {
     <link rel="stylesheet" href="../../assets/uploads/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-        .stats-grid {
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background-image: url('../../assets/images/background.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            font-family: 'Segoe UI', sans-serif;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.85);
+            z-index: 1;
+        }
+
+        .container {
+            position: relative;
+            z-index: 2;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .card-header {
+            margin-bottom: 20px;
+        }
+
+        .card-header h3 {
+            color: #2c3e50;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.3rem;
+        }
+
+        .card-header h3 i {
+            color: #007B5E;
+        }
+
+        .card-body {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .table th {
+            background: rgba(0, 123, 94, 0.1);
+            color: #2c3e50;
+            font-weight: 600;
+            padding: 12px 15px;
+            text-align: left;
+        }
+
+        .table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(0, 123, 94, 0.1);
+        }
+
+        .table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .status-pending {
+            background: rgba(255, 193, 7, 0.2);
+            color: #856404;
+        }
+
+        .status-approved {
+            background: rgba(40, 167, 69, 0.2);
+            color: #155724;
+        }
+
+        .status-cancelled {
+            background: rgba(220, 53, 69, 0.2);
+            color: #721c24;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #007B5E;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .alert {
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #fff;
+        }
+
+        .alert-success {
+            border-left: 4px solid #28a745;
+            color: #155724;
+        }
+
+        .alert-error {
+            border-left: 4px solid #dc3545;
+            color: #721c24;
+        }
+
+        .alert-info {
+            border-left: 4px solid #17a2b8;
+            color: #0c5460;
+        }
+
+        .filters {
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .search-box {
+            flex: 1;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid rgba(0, 123, 94, 0.2);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background: #fff;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #007B5E;
+            box-shadow: 0 0 0 3px rgba(0, 123, 94, 0.1);
+        }
+
+        .filter-select {
+            padding: 10px 15px;
+            border: 1px solid rgba(0, 123, 94, 0.2);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background: #fff;
+            min-width: 150px;
+            transition: all 0.3s ease;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #007B5E;
+            box-shadow: 0 0 0 3px rgba(0, 123, 94, 0.1);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: #fff;
+            color: #007B5E;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .back-link:hover {
+            background: rgba(0, 123, 94, 0.1);
+            color: #007B5E;
+            transform: translateY(-2px);
+        }
+
+        .header {
+            margin-bottom: 25px;
+        }
+
+        .header h2 {
+            color: #2c3e50;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+        }
+
+        .header h2 i {
+            color: #007B5E;
+        }
+
+        .transparency-box {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            border-left: 4px solid #007B5E;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .transparency-box h4 {
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .transparency-box p {
+            margin: 8px 0;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .transparency-box i {
+            color: #007B5E;
+            width: 20px;
+        }
+
+        .stats-container {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
+
         .stat-card {
-            background: white;
-            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.8);
             padding: 20px;
+            border-radius: 12px;
             text-align: center;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+            border: 1px solid rgba(0, 123, 94, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
         }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0, 123, 94, 0.1);
+        }
+
         .stat-value {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #2c3e50;
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #007B5E;
             margin: 10px 0;
         }
+
         .stat-label {
-            color: #6c757d;
+            color: #2c3e50;
             font-size: 0.9rem;
+            font-weight: 500;
         }
-        .filters {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        .filter-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .search-box {
-            flex: 1;
-            min-width: 200px;
-        }
-        .status-filter {
-            min-width: 150px;
-        }
+
         .order-card {
-            background: white;
+            background: rgba(255, 255, 255, 0.9);
             border-radius: 12px;
             padding: 20px;
             margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(0, 123, 94, 0.1);
         }
+
         .order-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 15px;
             padding-bottom: 15px;
-            border-bottom: 1px solid #e9ecef;
+            border-bottom: 1px solid rgba(0, 123, 94, 0.1);
         }
+
         .order-details {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: 2fr 1fr 1fr;
             gap: 20px;
         }
+
         .product-info {
             display: flex;
             gap: 15px;
         }
+
         .product-image {
             width: 80px;
             height: 80px;
             object-fit: cover;
             border-radius: 8px;
         }
-        .status-badge {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .status-pending {
-            background-color: #ffc107;
-            color: #000;
-        }
-        .status-fulfilled {
-            background-color: #28a745;
-            color: white;
-        }
-        .status-cancelled {
-            background-color: #dc3545;
-            color: white;
-        }
+
         .user-info h4 {
             color: #2c3e50;
             margin: 0 0 10px 0;
+            font-size: 1rem;
         }
+
         .user-info p {
             margin: 5px 0;
             color: #6c757d;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
+
         .order-actions {
             display: flex;
             gap: 10px;
             margin-top: 15px;
+            justify-content: flex-end;
         }
+
         .action-btn {
             padding: 8px 16px;
-            border-radius: 6px;
-            font-size: 0.875rem;
-            cursor: pointer;
             border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
             display: inline-flex;
             align-items: center;
-            gap: 5px;
+            gap: 8px;
         }
+
         .fulfill-btn {
-            background-color: #28a745;
+            background: #28a745;
             color: white;
         }
+
         .cancel-btn {
-            background-color: #dc3545;
+            background: #dc3545;
             color: white;
         }
+
+        .fulfill-btn:hover, .cancel-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
         .confirmation-dialog {
             display: none;
             position: fixed;
@@ -378,12 +665,14 @@ if (isset($_POST['action']) && isset($_POST['product_id'])) {
             left: 50%;
             transform: translate(-50%, -50%);
             background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            z-index: 1000;
-            width: 400px;
+            padding: 25px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            z-index: 1001;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
+
         .overlay {
             display: none;
             position: fixed;
@@ -391,66 +680,50 @@ if (isset($_POST['action']) && isset($_POST['product_id'])) {
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 999;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
         }
+
         .action-reason {
-            margin: 15px 0;
+            margin: 20px 0;
         }
+
+        .action-reason label {
+            display: block;
+            margin-bottom: 10px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
         .action-reason textarea {
             width: 100%;
-            padding: 8px;
-            border-radius: 4px;
-            border: 1px solid #ced4da;
+            padding: 12px;
+            border: 1px solid rgba(0, 123, 94, 0.2);
+            border-radius: 8px;
             resize: vertical;
+            min-height: 100px;
+            font-family: inherit;
         }
-        .status-history {
-            font-size: 0.85rem;
-            color: #6c757d;
-            margin-top: 5px;
-        }
+
         .action-buttons {
             display: flex;
             gap: 10px;
             justify-content: flex-end;
-            margin-top: 15px;
+            margin-top: 20px;
         }
-        .transparency-box {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border-left: 4px solid #007B5E;
-        }
-        .transparency-box h4 {
-            color: #2c3e50;
-            margin-top: 0;
-            margin-bottom: 10px;
-        }
-        .transparency-box p {
-            margin: 5px 0;
-            color: #666;
-        }
-        .status-guide {
-            display: flex;
-            gap: 20px;
-            margin-top: 10px;
-        }
-        .status-item {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .container {
-            background-color: rgba(255, 255, 255, 0.8);
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        .card {
-            background-color: rgba(255, 255, 255, 0.9);
-            border: none;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+        @media (max-width: 768px) {
+            .order-details {
+                grid-template-columns: 1fr;
+            }
+
+            .filters form {
+                flex-direction: column;
+            }
+
+            .filter-group {
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -461,8 +734,8 @@ if (isset($_POST['action']) && isset($_POST['product_id'])) {
         </a>
 
         <div class="card">
-            <div class="header">
-                <h2><i class="fas fa-shopping-cart"></i> Manage Orders</h2>
+            <div class="card-header">
+                <h3><i class="fas fa-shopping-cart"></i> Manage Orders</h3>
             </div>
 
             <!-- Add transparency info box -->
@@ -474,7 +747,7 @@ if (isset($_POST['action']) && isset($_POST['product_id'])) {
                 <p><i class="fas fa-shield-alt"></i> Ensure timely delivery and customer satisfaction</p>
             </div>
 
-            <div class="stats-grid">
+            <div class="stats-container">
                 <div class="stat-card">
                     <div class="stat-label">Total Orders</div>
                     <div class="stat-value"><?php echo $stats['total_orders']; ?></div>
