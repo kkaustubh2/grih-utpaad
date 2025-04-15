@@ -194,7 +194,7 @@ $recent_orders = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
       <div class="welcome-text">
         Welcome, <?php echo htmlspecialchars($_SESSION['user']['name']); ?>!
       </div>
-      <a href="../../auth/login.php" class="logout-btn">
+      <a href="../../auth/logout.php" class="logout-btn">
         <i class="fas fa-sign-out-alt"></i> Logout
       </a>
     </div>
