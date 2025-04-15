@@ -6,7 +6,7 @@ $order_id = intval($_GET['id']);
 $new_status = $_GET['status'];
 
 // Validate status
-$allowed = ['Pending', 'Shipped', 'Delivered'];
+$allowed = ['pending', 'fulfilled', 'cancelled'];
 if (!in_array($new_status, $allowed)) {
     die("Invalid status.");
 }

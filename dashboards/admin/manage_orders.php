@@ -28,8 +28,9 @@ if (isset($_POST['order_id']) && isset($_POST['new_status'])) {
     $reason = isset($_POST['reason']) ? trim($_POST['reason']) : '';
     $allowed_statuses = ['fulfilled', 'cancelled'];
 
-    if (empty($reason)) {
-        $_SESSION['error'] = "A reason is required for status change.";
+    // Only require reason for cancellations
+    if ($new_status === 'cancelled' && empty($reason)) {
+        $_SESSION['error'] = "A reason is required when cancelling an order.";
         header('Location: manage_orders.php');
         exit();
     }
@@ -52,19 +53,29 @@ if (isset($_POST['order_id']) && isset($_POST['new_status'])) {
         if ($update_stmt->execute()) {
             $_SESSION['success'] = "Order status updated successfully!";
             
-            // Log the action in existing admin_logs table
-            $log_stmt = $conn->prepare("
-                INSERT INTO admin_logs (admin_id, action, table_affected, record_id, new_values) 
-                VALUES (?, ?, 'orders', ?, ?)
-            ");
-            $action_type = 'UPDATE_ORDER_STATUS';
-            $log_data = json_encode([
-                'new_status' => $new_status,
-                'reason' => $reason,
-                'timestamp' => date('Y-m-d H:i:s')
-            ]);
-            $log_stmt->bind_param("isis", $admin_id, $action_type, $order_id, $log_data);
-            $log_stmt->execute();
+            // Get the admin ID from the admins table
+            $admin_stmt = $conn->prepare("SELECT id FROM admins WHERE user_id = ?");
+            $user_id = $_SESSION['user']['id'];
+            $admin_stmt->bind_param("i", $user_id);
+            $admin_stmt->execute();
+            $admin_result = $admin_stmt->get_result();
+            
+            if ($admin_row = $admin_result->fetch_assoc()) {
+                // Log the action in admin_logs table
+                $log_stmt = $conn->prepare("
+                    INSERT INTO admin_logs (admin_id, action, table_affected, record_id, new_values) 
+                    VALUES (?, ?, 'orders', ?, ?)
+                ");
+                $action_type = 'UPDATE_ORDER_STATUS';
+                $log_data = json_encode([
+                    'new_status' => $new_status,
+                    'reason' => $reason,
+                    'timestamp' => date('Y-m-d H:i:s')
+                ]);
+                $admin_id = $admin_row['id'];
+                $log_stmt->bind_param("isis", $admin_id, $action_type, $order_id, $log_data);
+                $log_stmt->execute();
+            }
         } else {
             $_SESSION['error'] = "Failed to update order status.";
         }
@@ -194,45 +205,57 @@ $pending_products = $conn->query("
 // Handle product approval/cancellation
 if (isset($_POST['action']) && isset($_POST['product_id'])) {
     $product_id = (int)$_POST['product_id'];
-    $admin_id = $_SESSION['user']['id'];
-    $action = $_POST['action'];
+    $user_id = $_SESSION['user']['id'];
     
-    if ($action === 'approve_product') {
-        $status_value = 1;
-        $action_type = 'APPROVE';
-        $success_message = "Product approved successfully!";
-    } else if ($action === 'cancel_product') {
-        $status_value = 2;
-        $action_type = 'CANCEL';
-        $success_message = "Product cancelled successfully!";
-    }
+    // Get admin ID from admins table
+    $admin_stmt = $conn->prepare("SELECT id FROM admins WHERE user_id = ?");
+    $admin_stmt->bind_param("i", $user_id);
+    $admin_stmt->execute();
+    $admin_result = $admin_stmt->get_result();
     
-    $stmt = $conn->prepare("
-        UPDATE products 
-        SET approved = ?,
-            is_approved = ?,
-            approved_by = ?, 
-            approved_at = CURRENT_TIMESTAMP 
-        WHERE id = ?
-    ");
-    $stmt->bind_param("iiii", $status_value, $status_value, $admin_id, $product_id);
-    
-    if ($stmt->execute()) {
-        $_SESSION['success'] = $success_message;
+    if ($admin_row = $admin_result->fetch_assoc()) {
+        $admin_id = $admin_row['id'];
+        $action = $_POST['action'];
         
-        // Log the action
-        $log_stmt = $conn->prepare("
-            INSERT INTO admin_logs (admin_id, action, table_affected, record_id, new_values) 
-            VALUES (?, ?, 'products', ?, ?)
+        if ($action === 'approve_product') {
+            $status_value = 1;
+            $action_type = 'APPROVE';
+            $success_message = "Product approved successfully!";
+        } else if ($action === 'cancel_product') {
+            $status_value = 2;
+            $action_type = 'CANCEL';
+            $success_message = "Product cancelled successfully!";
+        }
+        
+        $stmt = $conn->prepare("
+            UPDATE products 
+            SET approved = ?,
+                is_approved = ?,
+                approved_by = ?, 
+                approved_at = CURRENT_TIMESTAMP 
+            WHERE id = ?
         ");
-        $log_data = json_encode([
-            'status' => $action_type,
-            'timestamp' => date('Y-m-d H:i:s')
-        ]);
-        $log_stmt->bind_param("isis", $admin_id, $action_type, $product_id, $log_data);
-        $log_stmt->execute();
+        $stmt->bind_param("iiii", $status_value, $status_value, $admin_id, $product_id);
+        
+        if ($stmt->execute()) {
+            $_SESSION['success'] = $success_message;
+            
+            // Log the action
+            $log_stmt = $conn->prepare("
+                INSERT INTO admin_logs (admin_id, action, table_affected, record_id, new_values) 
+                VALUES (?, ?, 'products', ?, ?)
+            ");
+            $log_data = json_encode([
+                'status' => $action_type,
+                'timestamp' => date('Y-m-d H:i:s')
+            ]);
+            $log_stmt->bind_param("isis", $admin_id, $action_type, $product_id, $log_data);
+            $log_stmt->execute();
+        } else {
+            $_SESSION['error'] = "Failed to update product status.";
+        }
     } else {
-        $_SESSION['error'] = "Failed to update product status.";
+        $_SESSION['error'] = "Admin record not found.";
     }
     
     header('Location: manage_orders.php');
@@ -742,9 +765,9 @@ if (isset($_POST['action']) && isset($_POST['product_id'])) {
             <div class="transparency-box">
                 <h4>Orders Management Overview</h4>
                 <p><i class="fas fa-female"></i> Showing orders from female householder products only</p>
-                <p><i class="fas fa-info-circle"></i> Monitor and manage order fulfillment</p>
-                <p><i class="fas fa-history"></i> Track order status changes and updates</p>
-                <p><i class="fas fa-shield-alt"></i> Ensure timely delivery and customer satisfaction</p>
+                <p><i class="fas fa-info-circle"></i> Monitor order status and details</p>
+                <p><i class="fas fa-history"></i> Track order history and updates</p>
+                <p><i class="fas fa-shield-alt"></i> Ensure transparency in order management</p>
             </div>
 
             <div class="stats-container">
@@ -774,16 +797,16 @@ if (isset($_POST['action']) && isset($_POST['product_id'])) {
                 <form method="GET" style="width: 100%; display: flex; gap: 15px; flex-wrap: wrap;">
                     <div class="filter-group search-box">
                         <input type="text" name="search" placeholder="Search by product, buyer, or seller..." 
-                               value="<?php echo htmlspecialchars($search); ?>" style="margin: 0;">
+                               value="<?php echo htmlspecialchars($search); ?>" class="search-input">
                     </div>
                     <div class="filter-group">
-                        <select name="status" class="status-filter" style="margin: 0;">
+                        <select name="status" class="filter-select">
                             <option value="">All Statuses</option>
                             <option value="pending" <?php echo $status_filter === 'pending' ? 'selected' : ''; ?>>Pending</option>
                             <option value="fulfilled" <?php echo $status_filter === 'fulfilled' ? 'selected' : ''; ?>>Fulfilled</option>
                             <option value="cancelled" <?php echo $status_filter === 'cancelled' ? 'selected' : ''; ?>>Cancelled</option>
                         </select>
-                        <button type="submit" class="btn">
+                        <button type="submit" class="btn btn-success">
                             <i class="fas fa-filter"></i> Filter
                         </button>
                     </div>
@@ -802,7 +825,7 @@ if (isset($_POST['action']) && isset($_POST['product_id'])) {
                 </div>
             <?php endif; ?>
 
-            <!-- Add product approval section before orders table -->
+            <!-- Add product approval section -->
             <div class="card mb-4">
                 <div class="card-header">
                     <h3><i class="fas fa-box"></i> Product Management</h3>
@@ -925,38 +948,6 @@ if (isset($_POST['action']) && isset($_POST['product_id'])) {
                                 <p><i class="fas fa-user"></i> <?php echo htmlspecialchars($order['seller_name']); ?></p>
                                 <p><i class="fas fa-envelope"></i> <?php echo htmlspecialchars($order['seller_email']); ?></p>
                             </div>
-
-                            <?php if ($order['status'] === 'pending'): ?>
-                                <div style="text-align: right;">
-                                    <div class="order-actions">
-                                        <form method="POST" onsubmit="return confirmStatusChange(this, '<?php echo $order['id']; ?>', 'fulfilled', {
-                                            product: '<?php echo htmlspecialchars($order['product_title']); ?>',
-                                            buyer: '<?php echo htmlspecialchars($order['buyer_name']); ?>',
-                                            currentStatus: '<?php echo htmlspecialchars($order['status']); ?>'
-                                        });" style="display: inline;">
-                                            <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
-                                            <input type="hidden" name="new_status" value="fulfilled">
-                                            <button type="submit" class="action-btn fulfill-btn" 
-                                                    onclick="return confirm('Are you sure you want to mark this order as fulfilled?');">
-                                                <i class="fas fa-check"></i> Fulfill Order
-                                            </button>
-                                        </form>
-                                        
-                                        <form method="POST" onsubmit="return confirmStatusChange(this, '<?php echo $order['id']; ?>', 'cancelled', {
-                                            product: '<?php echo htmlspecialchars($order['product_title']); ?>',
-                                            buyer: '<?php echo htmlspecialchars($order['buyer_name']); ?>',
-                                            currentStatus: '<?php echo htmlspecialchars($order['status']); ?>'
-                                        });" style="display: inline;">
-                                            <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
-                                            <input type="hidden" name="new_status" value="cancelled">
-                                            <button type="submit" class="action-btn cancel-btn"
-                                                    onclick="return confirm('Are you sure you want to cancel this order?');">
-                                                <i class="fas fa-times"></i> Cancel Order
-                                            </button>
-                                        </form>
-                                    </div>
-                                </div>
-                            <?php endif; ?>
                         </div>
                     </div>
                 <?php endforeach; ?>
@@ -991,9 +982,9 @@ if (isset($_POST['action']) && isset($_POST['product_id'])) {
     <div class="confirmation-dialog" id="confirmationDialog">
         <h3>Update Order Status</h3>
         <p id="confirmationMessage"></p>
-        <div class="action-reason">
-            <label for="actionReason">Reason for Status Change (required):</label>
-            <textarea id="actionReason" rows="3" placeholder="Please provide a detailed reason for this status change"></textarea>
+        <div class="action-reason" id="reasonContainer">
+            <label for="actionReason">Reason for Cancellation (required):</label>
+            <textarea id="actionReason" rows="3" placeholder="Please provide a detailed reason for cancelling this order"></textarea>
         </div>
         <div class="action-buttons">
             <button onclick="cancelAction()" class="btn" style="background: #6c757d;">Cancel</button>
@@ -1002,12 +993,15 @@ if (isset($_POST['action']) && isset($_POST['product_id'])) {
     </div>
     <script>
     let currentForm = null;
+    let currentStatus = null;
 
     function confirmStatusChange(form, orderId, newStatus, orderDetails) {
         currentForm = form;
+        currentStatus = newStatus;
         const dialog = document.getElementById('confirmationDialog');
         const overlay = document.getElementById('overlay');
         const message = document.getElementById('confirmationMessage');
+        const reasonContainer = document.getElementById('reasonContainer');
         
         message.innerHTML = `
             <strong>Order #${orderId}</strong><br>
@@ -1018,6 +1012,9 @@ if (isset($_POST['action']) && isset($_POST['product_id'])) {
                 Current Status: ${orderDetails.currentStatus}
             </small>
         `;
+        
+        // Only show reason field for cancellations
+        reasonContainer.style.display = newStatus === 'cancelled' ? 'block' : 'none';
         
         dialog.style.display = 'block';
         overlay.style.display = 'block';
@@ -1034,21 +1031,26 @@ if (isset($_POST['action']) && isset($_POST['product_id'])) {
         overlay.style.display = 'none';
         reason.value = '';
         currentForm = null;
+        currentStatus = null;
     }
 
     function proceedAction() {
         const reason = document.getElementById('actionReason');
-        if (!reason.value.trim()) {
-            alert('Please provide a reason for this status change.');
+        
+        // Only validate reason for cancellations
+        if (currentStatus === 'cancelled' && !reason.value.trim()) {
+            alert('Please provide a reason for cancelling this order.');
             return;
         }
         
-        // Add reason to form
-        const reasonInput = document.createElement('input');
-        reasonInput.type = 'hidden';
-        reasonInput.name = 'reason';
-        reasonInput.value = reason.value;
-        currentForm.appendChild(reasonInput);
+        // Add reason to form only for cancellations
+        if (currentStatus === 'cancelled') {
+            const reasonInput = document.createElement('input');
+            reasonInput.type = 'hidden';
+            reasonInput.name = 'reason';
+            reasonInput.value = reason.value;
+            currentForm.appendChild(reasonInput);
+        }
         
         // Submit the form
         currentForm.submit();

@@ -407,26 +407,25 @@ try {
         </div>
 
         <div class="quick-actions">
-            <a href="manage_orders.php" class="action-card">
-                <div class="action-icon">
-                    <i class="fas fa-shopping-cart"></i>
-                </div>
-                <h4>Manage Orders</h4>
-                <p><?php echo $orders_stats['pending_orders']; ?> pending orders</p>
-            </a>
             <a href="manage_users.php" class="action-card">
-                <div class="action-icon">
-                    <i class="fas fa-users"></i>
-                </div>
+                <i class="fas fa-users fa-2x" style="color: #007B5E;"></i>
                 <h4>Manage Users</h4>
-                <p><?php echo $users_stats['total_users']; ?> total users</p>
+                <p>View and manage user accounts</p>
+            </a>
+            <a href="manage_products.php" class="action-card">
+                <i class="fas fa-box fa-2x" style="color: #007B5E;"></i>
+                <h4>Manage Products</h4>
+                <p>Review and approve products</p>
             </a>
             <a href="manage_categories.php" class="action-card">
-                <div class="action-icon">
-                    <i class="fas fa-tags"></i>
-                </div>
+                <i class="fas fa-tags fa-2x" style="color: #007B5E;"></i>
                 <h4>Manage Categories</h4>
-                <p>Organize products</p>
+                <p>Organize product categories</p>
+            </a>
+            <a href="manage_reviews.php" class="action-card">
+                <i class="fas fa-comments fa-2x" style="color: #007B5E;"></i>
+                <h4>Manage Reviews</h4>
+                <p>Monitor and moderate reviews</p>
             </a>
         </div>
 

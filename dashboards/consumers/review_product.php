@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Update existing review
             $stmt = $conn->prepare("
                 UPDATE reviews 
-                SET rating = ?, review_text = ?, updated_at = CURRENT_TIMESTAMP 
+                SET rating = ?, review_text = ?
                 WHERE id = ?
             ");
             $stmt->bind_param("isi", $rating, $review_text, $review['id']);

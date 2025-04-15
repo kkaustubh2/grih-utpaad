@@ -36,7 +36,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $stmt = $conn->prepare("INSERT INTO products (user_id, title, description, category_id, price, image) VALUES (?, ?, ?, ?, ?, ?)");
         $stmt->bind_param("issids", $user_id, $title, $description, $category, $price, $imageName);
         if ($stmt->execute()) {
-            $success = "Product/Skill added successfully!";
+            $_SESSION['success'] = "Product/Skill added successfully!";
+            header("Location: view_products.php");
+            exit();
         } else {
             $errors[] = "Failed to add product.";
         }
@@ -220,7 +222,7 @@ $categories = $conn->query("SELECT id, name FROM product_categories ORDER BY nam
             </div>
 
             <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                <a href="index.php" class="btn btn-secondary">
+                <a href="dashboard.php" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Back to Dashboard
                 </a>
                 <button type="submit" class="btn btn-primary">

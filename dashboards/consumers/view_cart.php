@@ -35,21 +35,42 @@ $total = 0;
             margin: 0;
             padding: 0;
             min-height: 100vh;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9f5f1 100%);
+            background-image: url('../../assets/images/background.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
             font-family: 'Segoe UI', sans-serif;
+            position: relative;
         }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.85);
+            z-index: 1;
+        }
+
         .container {
+            position: relative;
+            z-index: 2;
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
         }
+
         .cart-container {
-            background: rgba(255, 255, 255, 0.9);
+            background: #fff;
             border-radius: 15px;
             padding: 30px;
             margin-top: 20px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
+
         .cart-item {
             display: grid;
             grid-template-columns: 100px 2fr 1fr 1fr auto;
@@ -57,62 +78,92 @@ $total = 0;
             align-items: center;
             padding: 20px;
             border-bottom: 1px solid #eee;
+            background: #fff;
         }
+
         .cart-item:last-child {
             border-bottom: none;
         }
+
         .product-image {
             width: 100px;
             height: 100px;
             object-fit: contain;
+            border-radius: 8px;
         }
+
         .product-info h3 {
             margin: 0 0 10px 0;
             color: #2c3e50;
+            font-size: 1.2rem;
         }
+
         .seller-info {
-            color: #666;
+            color: #6c757d;
             font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
+
+        .seller-info i {
+            color: #007B5E;
+        }
+
         .quantity-controls {
             display: flex;
             align-items: center;
             gap: 10px;
         }
+
         .quantity-btn {
             background: #007B5E;
             color: white;
             border: none;
             width: 30px;
             height: 30px;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: all 0.3s ease;
         }
+
         .quantity-btn:hover {
             background: #005b46;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
+
         .quantity {
             font-size: 1.1rem;
             font-weight: 500;
+            color: #2c3e50;
         }
+
         .price {
             color: #007B5E;
             font-size: 1.2rem;
             font-weight: 600;
         }
+
         .remove-btn {
             color: #dc3545;
             background: none;
             border: none;
             cursor: pointer;
             font-size: 1.2rem;
+            transition: all 0.3s ease;
+            padding: 8px;
+            border-radius: 8px;
         }
+
         .remove-btn:hover {
             color: #c82333;
+            background: rgba(220, 53, 69, 0.1);
         }
+
         .cart-summary {
             margin-top: 30px;
             padding-top: 20px;
@@ -121,10 +172,17 @@ $total = 0;
             justify-content: space-between;
             align-items: center;
         }
+
         .total {
             font-size: 1.5rem;
             color: #2c3e50;
         }
+
+        .total span {
+            color: #007B5E;
+            font-weight: 600;
+        }
+
         .checkout-btn {
             background: #007B5E;
             color: white;
@@ -136,31 +194,81 @@ $total = 0;
             display: inline-flex;
             align-items: center;
             gap: 10px;
+            transition: all 0.3s ease;
         }
+
         .checkout-btn:hover {
             background: #005b46;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
+
         .empty-cart {
             text-align: center;
             padding: 50px 20px;
+            background: #fff;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
+
         .empty-cart i {
             font-size: 48px;
             color: #007B5E;
             margin-bottom: 20px;
         }
+
+        .empty-cart h2 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .empty-cart p {
+            color: #6c757d;
+            margin-bottom: 25px;
+        }
+
         .back-link {
             display: inline-flex;
             align-items: center;
             gap: 10px;
+            padding: 10px 20px;
             color: #007B5E;
             text-decoration: none;
             font-size: 1.1rem;
             font-weight: 500;
+            transition: all 0.3s ease;
             margin-bottom: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
+
         .back-link:hover {
             color: #005b46;
+            transform: translateX(-5px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            .cart-item {
+                grid-template-columns: 1fr;
+                text-align: center;
+                gap: 15px;
+            }
+
+            .product-image {
+                margin: 0 auto;
+            }
+
+            .quantity-controls {
+                justify-content: center;
+            }
+
+            .cart-summary {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
         }
     </style>
 </head>
@@ -186,7 +294,8 @@ $total = 0;
                         <div class="product-info">
                             <h3><?= htmlspecialchars($item['title']) ?></h3>
                             <div class="seller-info">
-                                Sold by: <?= htmlspecialchars($item['seller_name']) ?>
+                                <i class="fas fa-store"></i>
+                                <?= htmlspecialchars($item['seller_name']) ?>
                             </div>
                         </div>
 
@@ -224,7 +333,7 @@ $total = 0;
                     <div class="total">
                         Total: ₹<?= number_format($total, 2) ?>
                     </div>
-                    <form action="/dashboards/consumers/place_order.php" method="POST">
+                    <form action="place_order.php" method="POST">
                         <input type="hidden" name="action" value="cart_order">
                         <button type="submit" class="checkout-btn">
                             <i class="fas fa-shopping-cart"></i>

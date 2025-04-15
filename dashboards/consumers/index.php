@@ -20,105 +20,139 @@ if ($_SESSION['user']['role'] !== 'consumer') {
       margin: 0;
       padding: 0;
       min-height: 100vh;
-      background: linear-gradient(135deg, #f8f9fa 0%, #e9f5f1 100%);
+      background-image: url('../../assets/images/background.jpg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
       font-family: 'Segoe UI', sans-serif;
+      position: relative;
     }
+
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.85);
+      z-index: 1;
+    }
+
     .container {
+      position: relative;
+      z-index: 2;
       max-width: 1200px;
       margin: 0 auto;
       padding: 20px;
     }
+
     .header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 30px;
-      background: rgba(255, 255, 255, 0.9);
+      background: #fff;
       padding: 15px 30px;
       border-radius: 10px;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     }
+
     .user-info {
       display: flex;
       align-items: center;
       gap: 15px;
     }
+
     .user-name {
       font-weight: 500;
       color: #2c3e50;
     }
+
     .logout-btn {
       background: #dc3545;
       color: white;
       padding: 8px 20px;
-      border-radius: 5px;
+      border-radius: 8px;
       text-decoration: none;
       display: flex;
       align-items: center;
       gap: 8px;
       transition: all 0.3s ease;
     }
+
     .logout-btn:hover {
-      background: #c82333;
       transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      background: #c82333;
     }
+
     .hero {
-      background: rgba(255, 255, 255, 0.9);
+      background: #fff;
       padding: 40px;
       margin-bottom: 30px;
       text-align: center;
       border-radius: 15px;
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-      backdrop-filter: blur(10px);
     }
+
     .hero h1 {
       color: #007B5E;
       font-size: 40px;
       margin-bottom: 15px;
     }
+
     .hero p {
       font-size: 18px;
       margin-bottom: 25px;
       color: #6c757d;
     }
+
     .features {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 25px;
       margin-top: 30px;
     }
+
     .feature-card {
-      background: rgba(255, 255, 255, 0.9);
+      background: #fff;
       border-radius: 15px;
       padding: 30px;
       text-align: center;
       transition: transform 0.3s ease;
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-      backdrop-filter: blur(10px);
     }
+
     .feature-card:hover {
       transform: translateY(-5px);
     }
+
     .feature-card i {
       font-size: 35px;
       color: #007B5E;
       margin-bottom: 20px;
     }
+
     .feature-card h3 {
       margin: 15px 0;
       color: #2c3e50;
       font-size: 22px;
     }
+
     .feature-card p {
       color: #6c757d;
       line-height: 1.6;
     }
+
     .btn-group {
       display: flex;
       gap: 15px;
       justify-content: center;
       margin-top: 25px;
     }
+
     .btn {
       padding: 12px 25px;
       border-radius: 8px;
@@ -129,23 +163,30 @@ if ($_SESSION['user']['role'] !== 'consumer') {
       gap: 10px;
       transition: all 0.3s ease;
     }
+
     .btn:hover {
       transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
+
     .btn-primary {
       background: #007B5E;
       color: white;
     }
+
     .btn-primary:hover {
       background: #005b46;
     }
+
     .btn-success {
       background: #28a745;
       color: white;
     }
+
     .btn-success:hover {
       background: #218838;
     }
+
     @media (max-width: 768px) {
       .header {
         flex-direction: column;

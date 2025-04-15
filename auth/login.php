@@ -25,7 +25,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             if ($user['role'] === 'webmaster') {
                 header("Location: ../dashboards/webmaster/index.php");
             } elseif ($user['role'] === 'female_householder') {
-                header("Location: ../dashboards/female_householders/index.php");
+                header("Location: ../dashboards/female_householders/dashboard.php");
             } else {
                 header("Location: ../dashboards/consumers/index.php");
             }

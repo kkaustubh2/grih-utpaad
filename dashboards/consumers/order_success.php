@@ -9,43 +9,45 @@ if ($_SESSION['user']['role'] !== 'consumer') {
 
 require_once('../../config/db.php');
 
-// Get cart count for header
-$cart_count_query = $conn->prepare("SELECT COUNT(*) as count FROM cart WHERE consumer_id = ?");
-$cart_count_query->bind_param("i", $_SESSION['user']['id']);
-$cart_count_query->execute();
-$cart_count = $cart_count_query->get_result()->fetch_assoc()['count'];
-
-// Verify order exists and belongs to current user
+// Check if order ID is provided
 if (!isset($_GET['id'])) {
     header('Location: view_product.php');
     exit();
 }
 
 $order_id = intval($_GET['id']);
-$order_query = $conn->prepare("
-    SELECT o.*, oi.quantity, p.title, p.price, p.image
-    FROM orders o
-    JOIN order_items oi ON o.id = oi.order_id
-    JOIN products p ON oi.product_id = p.id
-    WHERE o.id = ? AND o.consumer_id = ?
-");
-$order_query->bind_param("ii", $order_id, $_SESSION['user']['id']);
-$order_query->execute();
-$result = $order_query->get_result();
 
+// Fetch orders with the same shipping address and phone (grouped order)
+$query = "SELECT o.*, p.title, p.image, u.name as seller_name
+          FROM orders o
+          JOIN products p ON o.product_id = p.id
+          JOIN users u ON p.user_id = u.id
+          WHERE o.consumer_id = ? 
+          AND o.shipping_address = (SELECT shipping_address FROM orders WHERE id = ?)
+          AND o.phone = (SELECT phone FROM orders WHERE id = ?)
+          AND o.ordered_at = (SELECT ordered_at FROM orders WHERE id = ?)";
+
+$stmt = $conn->prepare($query);
+$stmt->bind_param("iiii", $_SESSION['user']['id'], $order_id, $order_id, $order_id);
+$stmt->execute();
+$result = $stmt->get_result();
+
+// If no order found, redirect
 if ($result->num_rows === 0) {
     header('Location: view_product.php');
     exit();
 }
 
-$order_items = [];
+// Calculate total
 $total = 0;
+$order_items = [];
 while ($item = $result->fetch_assoc()) {
-    $order = $item; // Save order details
-    $item['subtotal'] = $item['price'] * $item['quantity'];
+    $total += $item['total_price'];
     $order_items[] = $item;
-    $total += $item['subtotal'];
 }
+
+// Get the first item for order details (they'll all have the same order info)
+$order = $order_items[0];
 ?>
 
 <!DOCTYPE html>
@@ -59,35 +61,90 @@ while ($item = $result->fetch_assoc()) {
             margin: 0;
             padding: 0;
             min-height: 100vh;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9f5f1 100%);
+            background-image: url('../../assets/images/background.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
             font-family: 'Segoe UI', sans-serif;
+            position: relative;
         }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.85);
+            z-index: 1;
+        }
+
         .container {
+            position: relative;
+            z-index: 2;
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
         }
-        .success-card {
-            background: rgba(255, 255, 255, 0.9);
+
+        .success-container {
+            background: #fff;
             border-radius: 15px;
             padding: 30px;
             margin-top: 20px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
             text-align: center;
         }
+
         .success-icon {
             color: #28a745;
-            font-size: 4rem;
+            font-size: 64px;
             margin-bottom: 20px;
         }
+
+        .success-message {
+            color: #2c3e50;
+            font-size: 24px;
+            margin-bottom: 30px;
+        }
+
         .order-details {
-            margin-top: 30px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
             text-align: left;
         }
-        .product-list {
-            margin: 20px 0;
+
+        .order-info {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
         }
-        .product-item {
+
+        .info-item {
+            padding: 10px;
+        }
+
+        .info-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .items-list {
+            margin-top: 30px;
+        }
+
+        .item {
             display: grid;
             grid-template-columns: 80px 2fr 1fr 1fr;
             gap: 20px;
@@ -95,129 +152,157 @@ while ($item = $result->fetch_assoc()) {
             padding: 15px;
             border-bottom: 1px solid #eee;
         }
-        .product-image {
+
+        .item:last-child {
+            border-bottom: none;
+        }
+
+        .item-image {
             width: 80px;
             height: 80px;
             object-fit: contain;
+            border-radius: 8px;
         }
-        .product-info h3 {
+
+        .item-info h3 {
             margin: 0 0 5px 0;
             font-size: 1.1rem;
             color: #2c3e50;
         }
-        .quantity {
-            color: #666;
+
+        .seller-info {
+            color: #6c757d;
+            font-size: 0.9rem;
         }
+
+        .quantity {
+            color: #2c3e50;
+        }
+
         .price {
             color: #007B5E;
             font-weight: 600;
         }
+
         .total {
             text-align: right;
-            font-size: 1.3rem;
-            color: #2c3e50;
             margin-top: 20px;
             padding-top: 20px;
             border-top: 2px solid #eee;
+            font-size: 1.2rem;
+            color: #2c3e50;
         }
-        .shipping-info {
+
+        .total span {
+            color: #007B5E;
+            font-weight: 600;
+        }
+
+        .action-buttons {
             margin-top: 30px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 8px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
         }
+
         .btn {
-            display: inline-block;
             padding: 12px 25px;
             border-radius: 8px;
             text-decoration: none;
-            font-weight: 600;
-            margin-top: 20px;
-            transition: all 0.3s ease;
-        }
-        .btn-primary {
-            background: #007B5E;
-            color: white;
-        }
-        .btn-primary:hover {
-            background: #005b46;
-            transform: translateY(-2px);
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 15px 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        .user-name {
             font-weight: 500;
-            color: #2c3e50;
-        }
-        .cart-btn {
-            background: #007B5E;
-            color: white;
-            padding: 8px 20px;
-            border-radius: 5px;
-            text-decoration: none;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             gap: 8px;
             transition: all 0.3s ease;
         }
-        .cart-count {
-            background: white;
-            color: #007B5E;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.8rem;
-            font-weight: bold;
+
+        .btn-primary {
+            background: #007B5E;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #005b46;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            .order-info {
+                grid-template-columns: 1fr;
+            }
+
+            .item {
+                grid-template-columns: 1fr;
+                text-align: center;
+                gap: 10px;
+            }
+
+            .item-image {
+                margin: 0 auto;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <div class="user-info">
-                <i class="fas fa-user-circle fa-2x" style="color: #007B5E;"></i>
-                <span class="user-name">Welcome, <?php echo htmlspecialchars($_SESSION['user']['name']); ?></span>
-            </div>
-            <a href="view_cart.php" class="cart-btn">
-                <i class="fas fa-shopping-cart"></i>
-                Cart
-                <?php if ($cart_count > 0): ?>
-                    <span class="cart-count"><?php echo $cart_count; ?></span>
-                <?php endif; ?>
-            </a>
-        </div>
-
-        <div class="success-card">
+        <div class="success-container">
             <i class="fas fa-check-circle success-icon"></i>
-            <h1>Order Placed Successfully!</h1>
-            <p>Thank you for your order. Your order ID is: #<?php echo $order_id; ?></p>
-
+            <h1 class="success-message">Order Placed Successfully!</h1>
+            
             <div class="order-details">
-                <h2>Order Summary</h2>
-                <div class="product-list">
+                <div class="order-info">
+                    <div class="info-item">
+                        <div class="info-label">Order ID</div>
+                        <div class="info-value">#<?= str_pad($order['id'], 6, '0', STR_PAD_LEFT) ?></div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Order Date</div>
+                        <div class="info-value"><?= date('F j, Y', strtotime($order['ordered_at'])) ?></div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Shipping Address</div>
+                        <div class="info-value"><?= nl2br(htmlspecialchars($order['shipping_address'])) ?></div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Phone Number</div>
+                        <div class="info-value"><?= htmlspecialchars($order['phone']) ?></div>
+                    </div>
+                </div>
+
+                <div class="items-list">
+                    <h2>Order Items</h2>
                     <?php foreach ($order_items as $item): ?>
-                        <div class="product-item">
+                        <div class="item">
                             <img src="../../assets/uploads/<?= htmlspecialchars($item['image']) ?>" 
                                  alt="<?= htmlspecialchars($item['title']) ?>" 
-                                 class="product-image">
+                                 class="item-image">
                             
-                            <div class="product-info">
+                            <div class="item-info">
                                 <h3><?= htmlspecialchars($item['title']) ?></h3>
+                                <div class="seller-info">
+                                    Sold by: <?= htmlspecialchars($item['seller_name']) ?>
+                                </div>
                             </div>
 
                             <div class="quantity">
@@ -225,24 +310,25 @@ while ($item = $result->fetch_assoc()) {
                             </div>
 
                             <div class="price">
-                                ₹<?= number_format($item['subtotal'], 2) ?>
+                                ₹<?= number_format($item['total_price'], 2) ?>
                             </div>
                         </div>
                     <?php endforeach; ?>
-                </div>
 
-                <div class="total">
-                    Total Amount: ₹<?= number_format($total, 2) ?>
-                </div>
-
-                <div class="shipping-info">
-                    <h3>Shipping Details</h3>
-                    <p><strong>Address:</strong> <?= nl2br(htmlspecialchars($order['shipping_address'])) ?></p>
-                    <p><strong>Phone:</strong> <?= htmlspecialchars($order['phone']) ?></p>
+                    <div class="total">
+                        Total Amount: <span>₹<?= number_format($total, 2) ?></span>
+                    </div>
                 </div>
             </div>
 
-            <a href="view_product.php" class="btn btn-primary">Continue Shopping</a>
+            <div class="action-buttons">
+                <a href="view_product.php" class="btn btn-primary">
+                    <i class="fas fa-shopping-bag"></i> Continue Shopping
+                </a>
+                <a href="my_orders.php" class="btn btn-secondary">
+                    <i class="fas fa-list"></i> View My Orders
+                </a>
+            </div>
         </div>
     </div>
 </body>

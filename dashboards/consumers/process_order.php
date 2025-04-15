@@ -60,25 +60,28 @@ try {
     // Start transaction
     $conn->begin_transaction();
 
-    // Create order in orders table
-    $create_order = $conn->prepare("INSERT INTO orders (consumer_id, shipping_address, phone, status, created_at) VALUES (?, ?, ?, 'pending', NOW())");
+    // Get product prices and create orders
+    $get_price = $conn->prepare("SELECT price FROM products WHERE id = ?");
+    if (!$get_price) {
+        throw new Exception("Failed to prepare price query: " . $conn->error);
+    }
+
+    $create_order = $conn->prepare("
+        INSERT INTO orders (
+            consumer_id, 
+            product_id, 
+            quantity, 
+            total_price, 
+            shipping_address, 
+            phone, 
+            status
+        ) VALUES (?, ?, ?, ?, ?, ?, 'pending')
+    ");
     if (!$create_order) {
         throw new Exception("Failed to prepare order creation statement: " . $conn->error);
     }
-    
-    $create_order->bind_param("iss", $_SESSION['user']['id'], $shipping_address, $phone);
-    if (!$create_order->execute()) {
-        throw new Exception("Failed to create order: " . $create_order->error);
-    }
-    
-    $order_id = $conn->insert_id;
-    error_log("Created order with ID: " . $order_id);
 
-    // Add order items
-    $add_item = $conn->prepare("INSERT INTO order_items (order_id, product_id, quantity, price) SELECT ?, ?, ?, price FROM products WHERE id = ?");
-    if (!$add_item) {
-        throw new Exception("Failed to prepare order items statement: " . $conn->error);
-    }
+    $first_order_id = null;
 
     for ($i = 0; $i < count($products); $i++) {
         $product_id = intval($products[$i]);
@@ -90,12 +93,36 @@ try {
             throw new Exception("Invalid quantity for product ID: $product_id");
         }
 
-        if (!$add_item->bind_param("iiii", $order_id, $product_id, $quantity, $product_id)) {
-            throw new Exception("Failed to bind parameters for order item: " . $add_item->error);
+        // Get product price
+        $get_price->bind_param("i", $product_id);
+        if (!$get_price->execute()) {
+            throw new Exception("Failed to get price for product ID: $product_id");
+        }
+        $price_result = $get_price->get_result();
+        if ($price_result->num_rows === 0) {
+            throw new Exception("Product not found: $product_id");
+        }
+        $price = $price_result->fetch_assoc()['price'];
+        $total_price = $price * $quantity;
+
+        // Create order
+        $create_order->bind_param(
+            "iiidss",
+            $_SESSION['user']['id'],
+            $product_id,
+            $quantity,
+            $total_price,
+            $shipping_address,
+            $phone
+        );
+
+        if (!$create_order->execute()) {
+            throw new Exception("Failed to create order: " . $create_order->error);
         }
 
-        if (!$add_item->execute()) {
-            throw new Exception("Failed to add order item: " . $add_item->error);
+        // Store the first order ID for redirection
+        if ($first_order_id === null) {
+            $first_order_id = $conn->insert_id;
         }
     }
 
@@ -112,11 +139,11 @@ try {
 
     // Commit transaction
     $conn->commit();
-    error_log("Order placed successfully!");
+    error_log("Orders placed successfully!");
 
     // Set success message and redirect
     $_SESSION['success'] = "Order placed successfully!";
-    header('Location: order_success.php?id=' . $order_id);
+    header('Location: order_success.php?id=' . $first_order_id);
     exit();
 
 } catch (Exception $e) {

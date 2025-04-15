@@ -35,56 +35,83 @@ $result = $conn->query($query);
             margin: 0;
             padding: 0;
             min-height: 100vh;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9f5f1 100%);
+            background-image: url('../../assets/images/background.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
             font-family: 'Segoe UI', sans-serif;
+            position: relative;
         }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.85);
+            z-index: 1;
+        }
+
         .container {
+            position: relative;
+            z-index: 2;
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
         }
+
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 30px;
-            background: rgba(255, 255, 255, 0.9);
+            background: #fff;
             padding: 15px 30px;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
+
         .user-info {
             display: flex;
             align-items: center;
             gap: 15px;
         }
+
         .user-name {
             font-weight: 500;
             color: #2c3e50;
         }
+
         .logout-btn {
             background: #dc3545;
             color: white;
             padding: 8px 20px;
-            border-radius: 5px;
+            border-radius: 8px;
             text-decoration: none;
             display: flex;
             align-items: center;
             gap: 8px;
             transition: all 0.3s ease;
         }
+
         .logout-btn:hover {
-            background: #c82333;
             transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background: #c82333;
         }
+
         .product-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 30px;
             padding: 30px 0;
         }
+
         .product-card {
-            background: rgba(255, 255, 255, 0.9);
+            background: #fff;
             border-radius: 15px;
             overflow: hidden;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
@@ -92,10 +119,12 @@ $result = $conn->query($query);
             display: flex;
             flex-direction: column;
         }
+
         .product-card:hover {
             transform: translateY(-10px);
             box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
         }
+
         .product-image-container {
             width: 100%;
             height: 300px;
@@ -103,22 +132,29 @@ $result = $conn->query($query);
             align-items: center;
             justify-content: center;
             overflow: hidden;
+            background: #fff;
         }
+
         .product-image {
             max-width: 100%;
             max-height: 300px;
             object-fit: contain;
+            transition: transform 0.3s ease;
         }
+
         .product-card:hover .product-image {
             transform: scale(1.05);
         }
+
         .product-info {
             padding: 25px;
             flex: 1;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            background: #fff;
         }
+
         .product-title {
             font-size: 1.4rem;
             color: #2c3e50;
@@ -130,6 +166,7 @@ $result = $conn->query($query);
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
+
         .product-category {
             color: #007B5E;
             font-size: 0.9rem;
@@ -139,12 +176,14 @@ $result = $conn->query($query);
             background: rgba(0, 123, 94, 0.1);
             border-radius: 15px;
         }
+
         .product-price {
             font-size: 1.6rem;
             color: #007B5E;
             font-weight: 700;
             margin-bottom: 15px;
         }
+
         .product-seller {
             color: #6c757d;
             margin-bottom: 20px;
@@ -153,20 +192,23 @@ $result = $conn->query($query);
             align-items: center;
             gap: 8px;
         }
+
         .product-seller i {
             color: #007B5E;
         }
+
         .product-actions {
             display: flex;
             gap: 15px;
         }
+
         .btn {
             flex: 1;
             text-align: center;
             padding: 12px 25px;
             font-size: 1.1rem;
             font-weight: 600;
-            border-radius: 10px;
+            border-radius: 8px;
             text-decoration: none;
             transition: all 0.3s ease;
             display: flex;
@@ -174,49 +216,67 @@ $result = $conn->query($query);
             justify-content: center;
             gap: 8px;
         }
+
         .btn-primary {
             background: #007B5E;
             color: white;
         }
+
         .btn-primary:hover {
             background: #005b46;
             transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
+
         .back-link {
             display: inline-flex;
             align-items: center;
             gap: 10px;
+            padding: 10px 20px;
             color: #007B5E;
             text-decoration: none;
             font-size: 1.1rem;
             font-weight: 500;
             transition: all 0.3s ease;
             margin-bottom: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
+
         .back-link:hover {
             color: #005b46;
             transform: translateX(-5px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
+
         .page-header {
-            text-align: center;
-            margin-bottom: 40px;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 30px;
+            background: #fff;
+            padding: 20px;
             border-radius: 15px;
+            margin-bottom: 30px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px);
         }
+
         .page-header h1 {
             color: #007B5E;
-            font-size: 2.5rem;
-            margin-bottom: 15px;
+            margin: 0;
+            font-size: 2rem;
         }
-        .page-header p {
-            color: #6c757d;
-            font-size: 1.2rem;
-            max-width: 600px;
-            margin: 0 auto;
+
+        .cart-count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #007B5E;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            font-size: 0.9rem;
+            margin-left: 8px;
         }
+
         @media (max-width: 768px) {
             .header {
                 flex-direction: column;
@@ -249,18 +309,6 @@ $result = $conn->query($query);
         .cart-btn:hover {
             background: #005b46;
             transform: translateY(-2px);
-        }
-        .cart-count {
-            background: white;
-            color: #007B5E;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.8rem;
-            font-weight: bold;
         }
     </style>
 </head>
