@@ -12,25 +12,59 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     if (empty($name) || empty($email) || empty($password) || empty($role)) {
         $errors[] = "All fields are required.";
     } else {
-        // Hash password
-        $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+        // Name validation
+        if (!preg_match('/^[a-zA-Z]+(?:[-\s][a-zA-Z]+)*$/', $name)) {
+            $errors[] = "Name should contain only letters, spaces, and hyphens, and must start and end with a letter.";
+        }
+        if (strlen($name) < 2 || strlen($name) > 50) {
+            $errors[] = "Name must be between 2 and 50 characters long.";
+        }
+        if (strpos($name, '  ') !== false) {
+            $errors[] = "Name cannot contain consecutive spaces.";
+        }
 
-        // Check if user exists
-        $stmt = $conn->prepare("SELECT * FROM users WHERE email = ?");
-        $stmt->bind_param("s", $email);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        if ($result->num_rows > 0) {
-            $errors[] = "Email already registered.";
-        } else {
-            // Insert user
-            $stmt = $conn->prepare("INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)");
-            $stmt->bind_param("ssss", $name, $email, $hashedPassword, $role);
-            if ($stmt->execute()) {
-                header("Location: login.php?register=success");
-                exit;
+        // Password validation
+        if (strlen($password) < 8) {
+            $errors[] = "Password must be at least 8 characters long.";
+        }
+        if (strlen($password) > 72) {
+            $errors[] = "Password must not exceed 72 characters.";
+        }
+        if (!preg_match('/[A-Z]/', $password)) {
+            $errors[] = "Password must contain at least one uppercase letter.";
+        }
+        if (!preg_match('/[a-z]/', $password)) {
+            $errors[] = "Password must contain at least one lowercase letter.";
+        }
+        if (!preg_match('/[0-9]/', $password)) {
+            $errors[] = "Password must contain at least one number.";
+        }
+        if (!preg_match('/[!@#$%^&*(),.?":{}|<>]/', $password)) {
+            $errors[] = "Password must contain at least one special character (!@#$%^&*(),.?\":{}|<>).";
+        }
+
+        // Only proceed if no validation errors
+        if (empty($errors)) {
+            // Hash password
+            $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+
+            // Check if user exists
+            $stmt = $conn->prepare("SELECT * FROM users WHERE email = ?");
+            $stmt->bind_param("s", $email);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            if ($result->num_rows > 0) {
+                $errors[] = "Email already registered.";
             } else {
-                $errors[] = "Registration failed. Try again.";
+                // Insert user
+                $stmt = $conn->prepare("INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)");
+                $stmt->bind_param("ssss", $name, $email, $hashedPassword, $role);
+                if ($stmt->execute()) {
+                    header("Location: login.php?register=success");
+                    exit;
+                } else {
+                    $errors[] = "Registration failed. Try again.";
+                }
             }
         }
     }
@@ -264,7 +298,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <div class="input-group">
                     <i class="fas fa-lock"></i>
                     <input type="password" id="password" name="password" class="form-control" required 
-                           placeholder="Create a password">
+                           placeholder="Create a password"
+                           title="Password must be 8-72 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character (!@#$%^&*(),.?&quot;:{}|<>)">
                 </div>
             </div>
 

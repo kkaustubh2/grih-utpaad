@@ -433,27 +433,86 @@ $has_reviewed = $has_reviewed_query->get_result()->fetch_assoc()['reviewed'] > 0
 
         .action-buttons {
             display: flex;
+            flex-direction: column;
             gap: 15px;
-            margin-top: 20px;
+            margin-top: 30px;
         }
 
-        .cart-btn {
-            background: #007B5E;
-            color: white;
-            padding: 8px 20px;
+        .action-buttons form {
+            width: 100%;
+        }
+
+        .btn-action {
+            width: 100%;
+            padding: 15px 25px;
+            border: none;
             border-radius: 8px;
-            text-decoration: none;
+            font-size: 1.1rem;
+            font-weight: 500;
+            cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 8px;
+            justify-content: center;
+            gap: 10px;
             transition: all 0.3s ease;
-            margin-right: 15px;
+            text-decoration: none;
+            color: white;
         }
 
-        .cart-btn:hover {
+        .btn-cart {
+            background: #007B5E;
+            color: white !important;
+        }
+
+        .btn-cart:hover {
             background: #005b46;
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-buy {
+            background: #2c3e50;
+            color: white !important;
+        }
+
+        .btn-buy:hover {
+            background: #1a252f;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-review {
+            background: #ffc107;
+            color: #2c3e50 !important;
+        }
+
+        .btn-review:hover {
+            background: #e0a800;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .quantity-input {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 10px 0;
+        }
+
+        .quantity-input label {
+            color: #2c3e50;
+            font-weight: 500;
+            min-width: 80px;
+        }
+
+        .quantity-input input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid rgba(0, 123, 94, 0.2);
+            border-radius: 8px;
+            font-size: 1rem;
+            color: #2c3e50;
         }
 
         .alert {
@@ -588,29 +647,37 @@ $has_reviewed = $has_reviewed_query->get_result()->fetch_assoc()['reviewed'] > 0
                     <?php echo nl2br(htmlspecialchars($product['description'])); ?>
                 </div>
 
+                <div class="quantity-input">
+                    <label for="quantity">Quantity:</label>
+                    <input type="number" id="quantity" name="quantity" value="1" min="1" max="<?php echo $product['stock']; ?>">
+                </div>
+
                 <div class="action-buttons">
-                    <form action="add_to_cart.php" method="POST" style="flex: 1;">
+                    <form method="POST" action="add_to_cart.php">
                         <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
-                        <button type="submit" class="btn btn-primary">
+                        <input type="hidden" name="quantity" id="cart_quantity" name="quantity" value="1">
+                        <button type="submit" class="btn-action btn-cart">
                             <i class="fas fa-shopping-cart"></i> Add to Cart
                         </button>
                     </form>
 
-                    <form action="place_order.php" method="POST" style="flex: 1;">
-                        <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
-                        <input type="hidden" name="action" value="direct_order">
-                        <button type="submit" class="btn btn-secondary">
-                            <i class="fas fa-bolt"></i> Buy Now
-                        </button>
-                    </form>
+                    <a href="checkout.php?product_id=<?php echo $product['id']; ?>" class="btn-action btn-buy">
+                        <i class="fas fa-bolt"></i> Buy Now
+                    </a>
 
-                    <?php if ($has_purchased): ?>
-                        <a href="review_product.php?product_id=<?php echo $product_id; ?>" class="btn <?php echo $has_reviewed ? 'btn-secondary' : 'btn-primary'; ?>" style="flex: 1;">
-                            <i class="fas <?php echo $has_reviewed ? 'fa-edit' : 'fa-star'; ?>"></i>
-                            <?php echo $has_reviewed ? 'Edit Review' : 'Write Review'; ?>
-                        </a>
+                    <?php if ($has_purchased && !$has_reviewed): ?>
+                    <a href="review_product.php?product_id=<?php echo $product['id']; ?>" class="btn-action btn-review">
+                        <i class="fas fa-star"></i> Write a Review
+                    </a>
                     <?php endif; ?>
                 </div>
+
+                <script>
+                    // Update cart quantity when input changes
+                    document.getElementById('quantity').addEventListener('change', function() {
+                        document.getElementById('cart_quantity').value = this.value;
+                    });
+                </script>
             </div>
         </div>
 

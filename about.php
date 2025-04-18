@@ -243,13 +243,13 @@ require_once('config/db.php');
                 <!-- Kaustubh's Card -->
                 <div style="background: white; border-radius: 15px; padding: 30px; text-align: center; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);">
                     <div class="profile-circle">K</div>
-                    <h3 style="color: #2c3e50; margin: 0 0 10px;">Kaustubh</h3>
+                    <h3 style="color: #2c3e50; margin: 0 0 10px;">Kaustubh Shukla</h3>
                     <p style="color: #007B5E; margin: 0 0 15px;">Full Stack Developer</p>
                     <p style="color: #666; font-size: 0.9em; margin: 0 0 20px;">
                         Passionate about creating seamless user experiences and robust backend systems.
                     </p>
                     <div style="display: flex; gap: 15px; justify-content: center;">
-                        <a href="https://github.com/kaustubh" target="_blank" style="
+                        <a href="https://github.com/kkaustubh2" target="_blank" style="
                             color: #2c3e50;
                             width: 40px;
                             height: 40px;
@@ -283,7 +283,7 @@ require_once('config/db.php');
                 <!-- Shivam's Card -->
                 <div style="background: white; border-radius: 15px; padding: 30px; text-align: center; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);">
                     <div class="profile-circle">S</div>
-                    <h3 style="color: #2c3e50; margin: 0 0 10px;">Shivam</h3>
+                    <h3 style="color: #2c3e50; margin: 0 0 10px;">Shivam Javeri</h3>
                     <p style="color: #007B5E; margin: 0 0 15px;">Backend Developer</p>
                     <p style="color: #666; font-size: 0.9em; margin: 0 0 20px;">
                         Specialized in building scalable backend architectures and database optimization.
@@ -323,7 +323,7 @@ require_once('config/db.php');
                 <!-- Akash's Card -->
                 <div style="background: white; border-radius: 15px; padding: 30px; text-align: center; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);">
                     <div class="profile-circle">A</div>
-                    <h3 style="color: #2c3e50; margin: 0 0 10px;">Akash</h3>
+                    <h3 style="color: #2c3e50; margin: 0 0 10px;">Akash Gupta</h3>
                     <p style="color: #007B5E; margin: 0 0 15px;">Frontend Developer</p>
                     <p style="color: #666; font-size: 0.9em; margin: 0 0 20px;">
                         Expert in creating beautiful and responsive user interfaces with modern technologies.
@@ -344,6 +344,46 @@ require_once('config/db.php');
                             <i class="fab fa-github"></i>
                         </a>
                         <a href="https://linkedin.com/in/akash" target="_blank" style="
+                            color: #2c3e50;
+                            width: 40px;
+                            height: 40px;
+                            border-radius: 50%;
+                            background: rgba(0, 123, 94, 0.1);
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            transition: all 0.3s;
+                        " onmouseover="this.style.background='#007B5E';this.style.color='white'" 
+                           onmouseout="this.style.background='rgba(0, 123, 94, 0.1)';this.style.color='#2c3e50'">
+                            <i class="fab fa-linkedin-in"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Arya's Card -->
+                <div style="background: white; border-radius: 15px; padding: 30px; text-align: center; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);">
+                    <div class="profile-circle">A</div>
+                    <h3 style="color: #2c3e50; margin: 0 0 10px;">Arya Singh</h3>
+                    <p style="color: #007B5E; margin: 0 0 15px;">UI/UX Designer</p>
+                    <p style="color: #666; font-size: 0.9em; margin: 0 0 20px;">
+                        Dedicated to creating intuitive and engaging user experiences with a focus on accessibility.
+                    </p>
+                    <div style="display: flex; gap: 15px; justify-content: center;">
+                        <a href="https://github.com/aryasingh" target="_blank" style="
+                            color: #2c3e50;
+                            width: 40px;
+                            height: 40px;
+                            border-radius: 50%;
+                            background: rgba(0, 123, 94, 0.1);
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            transition: all 0.3s;
+                        " onmouseover="this.style.background='#007B5E';this.style.color='white'" 
+                           onmouseout="this.style.background='rgba(0, 123, 94, 0.1)';this.style.color='#2c3e50'">
+                            <i class="fab fa-github"></i>
+                        </a>
+                        <a href="https://linkedin.com/in/aryasingh" target="_blank" style="
                             color: #2c3e50;
                             width: 40px;
                             height: 40px;

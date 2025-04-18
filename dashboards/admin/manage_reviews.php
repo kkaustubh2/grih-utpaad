@@ -28,7 +28,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'delete' && isset($_POST['re
 // Fetch all reviews with product and user details
 $reviews_query = "
     SELECT r.*, 
-           p.title as product_title, p.id as product_id,
+           p.title as product_title, p.id as product_id, p.image as product_image,
            u.name as reviewer_name, u.email as reviewer_email
     FROM reviews r
     JOIN products p ON r.product_id = p.id
@@ -113,6 +113,19 @@ $reviews = $conn->query($reviews_query);
             align-items: flex-start;
             margin-bottom: 20px;
             gap: 20px;
+        }
+        .product-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .product-image {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 2px solid rgba(0, 123, 94, 0.1);
         }
         .review-info {
             flex: 1;
@@ -263,21 +276,23 @@ $reviews = $conn->query($reviews_query);
                     <div class="review-card">
                         <div class="review-header">
                             <div class="review-info">
-                                <h3>
-                                    <a href="../consumers/product_detail.php?id=<?php echo $review['product_id']; ?>" class="product-link">
-                                        <i class="fas fa-box"></i> <?php echo htmlspecialchars($review['product_title']); ?>
-                                    </a>
-                                </h3>
-                                <p>
-                                    <i class="fas fa-user"></i> Reviewed by: <?php echo htmlspecialchars($review['reviewer_name']); ?> 
-                                    (<?php echo htmlspecialchars($review['reviewer_email']); ?>)
-                                </p>
-                                <p>
-                                    <i class="fas fa-calendar"></i> Posted on: <?php echo date('M d, Y', strtotime($review['created_at'])); ?>
-                                </p>
+                                <div class="product-info">
+                                    <img src="../../assets/uploads/<?php echo htmlspecialchars($review['product_image']); ?>" 
+                                         alt="<?php echo htmlspecialchars($review['product_title']); ?>"
+                                         class="product-image">
+                                    <div>
+                                        <h3>
+                                            <a href="../../product_detail.php?id=<?php echo $review['product_id']; ?>" class="product-link">
+                                                <?php echo htmlspecialchars($review['product_title']); ?>
+                                            </a>
+                                        </h3>
+                                        <p>Reviewed by: <?php echo htmlspecialchars($review['reviewer_name']); ?></p>
+                                        <p>Email: <?php echo htmlspecialchars($review['reviewer_email']); ?></p>
+                                    </div>
+                                </div>
                             </div>
                             <div class="review-actions">
-                                <a href="../consumers/product_detail.php?id=<?php echo $review['product_id']; ?>" class="btn view-btn">
+                                <a href="../../product_detail.php?id=<?php echo $review['product_id']; ?>" class="btn view-btn">
                                     <i class="fas fa-eye"></i> View Product
                                 </a>
                                 <form method="POST" onsubmit="return confirm('Are you sure you want to delete this review?');" style="margin: 0;">

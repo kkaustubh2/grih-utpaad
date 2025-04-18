@@ -90,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
     <div class="container">
-        <a href="my_products.php" class="back-link">
+        <a href="view_products.php" class="back-link">
             <i class="fas fa-arrow-left"></i> Back to My Products
         </a>
 
